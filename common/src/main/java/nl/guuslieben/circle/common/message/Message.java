@@ -3,12 +3,14 @@ package nl.guuslieben.circle.common.message;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @JsonSerialize
 @NoArgsConstructor
 @Getter
+@EqualsAndHashCode
 public class Message {
 
     @JsonProperty
