@@ -19,6 +19,8 @@
         <sonar.projectKey>LiebenGuus_Sec1-The-Circle</sonar.projectKey>
         <sonar.organization>liebenguus</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <!-- Include Angular results -->
+        <sonar.sources>web/Circle/src</sonar.sources>
     </properties>
     <dependencies>
         <dependency>
