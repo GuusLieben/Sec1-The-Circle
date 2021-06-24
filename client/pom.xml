@@ -2,25 +2,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.example.application</groupId>
-    <artifactId>thecircle</artifactId>
-    <name>Project base for Spring Boot and Vaadin Flow</name>
-    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+
+    <groupId>nl.guuslieben.circle</groupId>
+    <artifactId>client</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <name>Project base for Spring Boot and Vaadin Flow</name>
 
     <properties>
         <java.version>16</java.version>
         <vaadin.version>20.0.3</vaadin.version>
-        <sonar.projectKey>LiebenGuus_Sec1-The-Circle</sonar.projectKey>
-        <sonar.organization>liebenguus</sonar.organization>
-        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.4.5</version>
+        <groupId>nl.guuslieben</groupId>
+        <artifactId>circle-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
 
     <repositories>
@@ -69,6 +67,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>nl.guuslieben.circle</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.vaadin</groupId>
             <!-- Replace artifactId with vaadin-core to use only free components -->
             <artifactId>vaadin</artifactId>
@@ -83,11 +87,6 @@
             <version>1.6.2</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>

@@ -1,4 +1,4 @@
-package com.example.application;
+package nl.guuslieben.circle;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;
@@ -8,6 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.vaadin.artur.helpers.LaunchUtil;
 import com.vaadin.flow.theme.Theme;
+
+import nl.guuslieben.circle.common.message.MessageUtilities;
 
 /**
  * The entry point of the Spring Boot application.

@@ -1,4 +1,4 @@
-package com.example.application.message;
+package nl.guuslieben.circle.common.message;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

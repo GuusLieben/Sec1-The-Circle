@@ -1,4 +1,4 @@
-package com.example.application.message;
+package nl.guuslieben.circle.common.message;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

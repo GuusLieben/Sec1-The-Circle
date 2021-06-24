@@ -1,4 +1,4 @@
-package com.example.application.views;
+package nl.guuslieben.circle.views;
 
 import java.util.Optional;
 
@@ -17,7 +17,7 @@ import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.router.PageTitle;
-import com.example.application.views.main.MainView;
+import nl.guuslieben.circle.views.main.MainView;
 
 /**
  * The main view is a top-level placeholder for other views.

@@ -1,4 +1,4 @@
-package com.example.application.components;
+package nl.guuslieben.circle.components;
 
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.JsModule;

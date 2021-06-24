@@ -1,7 +1,7 @@
-package com.example.application.views.main;
+package nl.guuslieben.circle.views.main;
 
-import com.example.application.components.TestComponent;
-import com.example.application.views.MainLayout;
+import nl.guuslieben.circle.components.TestComponent;
+import nl.guuslieben.circle.views.MainLayout;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.JsModule;
@@ -13,9 +13,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A Designer generated component for the stub-tag template.
