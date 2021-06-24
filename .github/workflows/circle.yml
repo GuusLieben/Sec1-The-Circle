@@ -1,4 +1,4 @@
-name: Server
+name: The Circle
 on:
   push:
     branches:
@@ -29,9 +29,10 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
+      - name: Install Common
+        run: mvn -B install -pl common
       - name: Build and analyze (server)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        working-directory: ./server
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -f server/pom.xml
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
