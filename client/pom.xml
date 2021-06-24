@@ -8,7 +8,7 @@
     <artifactId>client</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <name>Project base for Spring Boot and Vaadin Flow</name>
+    <name>Circle Client</name>
 
     <properties>
         <java.version>16</java.version>
