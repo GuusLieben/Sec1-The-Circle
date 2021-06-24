@@ -9,17 +9,18 @@ import lombok.NoArgsConstructor;
 @JsonSerialize
 @NoArgsConstructor
 @Getter
-public class Message<T> {
+public class Message {
 
     @JsonProperty
     private String hash;
     @JsonProperty
     private String timestamp;
     @JsonProperty
-    private T content;
+    private String content;
 
-    public Message(T content) {
-        this.content = content;
-
+    public Message(Object content) {
+        this.content = MessageUtilities.toJson(content);
+        this.hash = MessageUtilities.generateHash(this.content);
+        this.timestamp = MessageUtilities.generateTimestamp();
     }
 }
