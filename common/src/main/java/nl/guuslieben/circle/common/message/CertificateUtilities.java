@@ -67,8 +67,8 @@ public class CertificateUtilities {
     public static Optional<X509Certificate> fromPem(String certificate) {
         try {
             if (certificate != null && !certificate.trim().isEmpty()) {
-                certificate = certificate.replace(BEGIN_CERT + "\r\n", "")
-                        .replace("\r\n" + END_CERT, ""); // NEED FOR PEM FORMAT CERT STRING
+                certificate = certificate.replace(BEGIN_CERT + LINE_SEPARATOR, "")
+                        .replace(LINE_SEPARATOR + END_CERT, ""); // NEED FOR PEM FORMAT CERT STRING
                 var certificateData = Base64.getDecoder().decode(certificate);
                 var factory = CertificateFactory.getInstance(CF_INSTANCE);
                 return Optional.of((X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certificateData)));
