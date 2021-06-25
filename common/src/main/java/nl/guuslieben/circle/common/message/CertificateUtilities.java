@@ -6,11 +6,14 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -22,16 +25,18 @@ public class CertificateUtilities {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
-    public final static String LINE_SEPARATOR = System.getProperty("line.separator");
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private static final String CERTIFICATE_ALGORITHM = "RSA";
     private static final String CERTIFICATE_DN = "CN=cn, O=o, L=L, ST=il, C= c";
     private static final String CF_INSTANCE = "X509";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
-    private static final String KEYSTORE_TYPE = "JKS";
     private static final int CERTIFICATE_BITS = 1024;
 
     static {
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    private CertificateUtilities() {
     }
 
     public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
@@ -41,7 +46,7 @@ public class CertificateUtilities {
     }
 
     @SuppressWarnings("deprecation")
-    public static X509Certificate createCertificate(KeyPair keyPair) throws Exception {
+    public static X509Certificate createCertificate(KeyPair keyPair) throws SignatureException, InvalidKeyException {
         X509Certificate cert;
 
         var v3CertGen = new X509V3CertificateGenerator();
@@ -56,7 +61,7 @@ public class CertificateUtilities {
         return cert;
     }
 
-    public static String toPem(X509Certificate cert) throws Exception {
+    public static String toPem(X509Certificate cert) throws CertificateEncodingException {
         final var encoder = Base64.getEncoder();
 
         final var rawCrtText = cert.getEncoded();
