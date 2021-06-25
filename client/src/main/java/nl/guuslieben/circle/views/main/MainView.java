@@ -10,10 +10,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 
-import java.util.Optional;
-
 import nl.guuslieben.circle.ClientService;
-import nl.guuslieben.circle.common.message.Message;
 import nl.guuslieben.circle.common.message.MessageUtilities;
 import nl.guuslieben.circle.views.MainLayout;
 
@@ -33,15 +30,12 @@ public class MainView extends LitTemplate {
     @Id
     private Button sayHello;
 
-    private final ClientService service;
-
     public MainView(ClientService service) {
-        this.service = service;
 
         this.sayHello.addClickListener(e -> {
-            final Optional<Message> result = this.service.request("http://localhost:9090/");
+            final var result = service.request("http://localhost:9090/");
             if (result.isPresent()) {
-                final Message message = result.get();
+                final var message = result.get();
                 if (MessageUtilities.verify(message)) {
                     Notification.show("Received a validated message at " + message.getTimestamp());
                 } else {
