@@ -1,18 +1,18 @@
 package nl.guuslieben.circle.views.main;
 
-import nl.guuslieben.circle.components.TestComponent;
-import nl.guuslieben.circle.views.MainLayout;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.JsModule;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.littemplate.LitTemplate;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.template.Id;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
+
+import nl.guuslieben.circle.ClientService;
+import nl.guuslieben.circle.common.message.MessageUtilities;
+import nl.guuslieben.circle.views.MainLayout;
 
 /**
  * A Designer generated component for the stub-tag template.
@@ -28,16 +28,20 @@ import com.vaadin.flow.router.RouteAlias;
 public class MainView extends LitTemplate {
 
     @Id
-    private TextField name;
-    @Id
     private Button sayHello;
-    @Id
-    private Div list;
 
-    public MainView() {
+    public MainView(ClientService service) {
+
         this.sayHello.addClickListener(e -> {
-            this.list.add(new TestComponent(this.name.getValue()));
-            Notification.show("Hello " + this.name.getValue());
+            final var result = service.request("http://localhost:9090/");
+            if (result.isPresent()) {
+                final var message = result.get();
+                if (MessageUtilities.verify(message)) {
+                    Notification.show("Received a validated message at " + message.getTimestamp());
+                } else {
+                    Notification.show("Received a invalid message at " + message.getTimestamp());
+                }
+            }
         });
     }
 }
