@@ -88,8 +88,11 @@ public class MessageUtilities {
     }
 
     public static <T> String toJson(T content) {
+        if (content instanceof String) return (String) content;
         try {
-            return MAPPER.writeValueAsString(content);
+            final String json = MAPPER.writeValueAsString(content);
+            // Jackson can map invalid JSON strings to string literal 'null', ensure we catch it here
+            return json == null || "null".equals(json) ? INVALID : json;
         }
         catch (JsonProcessingException e) {
             return INVALID;
