@@ -1,4 +1,4 @@
-package nl.guuslieben.circle.common.message;
+package nl.guuslieben.circle.common.util;
 
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -6,14 +6,14 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -22,30 +22,21 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
-import nl.guuslieben.circle.common.UserData;
-
 public class CertificateUtilities {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
-    private static final String CERTIFICATE_ALGORITHM = "RSA";
     private static final String CERTIFICATE_DN = "CN=cn, O=o, L=L, ST=il, C= c";
     private static final String CF_INSTANCE = "X509";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
-    private static final int CERTIFICATE_BITS = 1024;
+
 
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
 
     private CertificateUtilities() {
-    }
-
-    public static KeyPair generateKeyPair(UserData data) throws NoSuchAlgorithmException {
-        var keyPairGenerator = KeyPairGenerator.getInstance(CERTIFICATE_ALGORITHM);
-        keyPairGenerator.initialize(CERTIFICATE_BITS, new SecureRandom(data.getEmail().getBytes(StandardCharsets.UTF_8)));
-        return keyPairGenerator.generateKeyPair();
     }
 
     @SuppressWarnings("deprecation")
@@ -87,6 +78,16 @@ public class CertificateUtilities {
         }
         catch (CertificateException e) {
             return Optional.empty();
+        }
+    }
+
+    public static boolean verify(Certificate certificate, PublicKey key) {
+        try {
+            certificate.verify(key);
+            return true;
+        }
+        catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
+            return false;
         }
     }
 }

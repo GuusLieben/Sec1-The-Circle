@@ -13,16 +13,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
-
 import nl.guuslieben.circle.ClientService;
 import nl.guuslieben.circle.common.UserData;
-import nl.guuslieben.circle.common.message.CertificateUtilities;
-import nl.guuslieben.circle.common.message.Message;
-import nl.guuslieben.circle.common.message.MessageUtilities;
-import nl.guuslieben.circle.common.rest.RegisterUserModel;
 import nl.guuslieben.circle.views.MainLayout;
 
 /**
@@ -60,26 +52,12 @@ public class MainView extends LitTemplate {
 
     public void onClick(ClickEvent<Button> event) {
         final UserData data = new UserData(this.name.getValue(), this.email.getValue(), -1);
+        final boolean validServerCertificate = this.service.csr(data, this.password.getValue());
 
-        KeyPair pair = null;
-        try {
-            pair = CertificateUtilities.generateKeyPair(data);
-        }
-        catch (NoSuchAlgorithmException e1) {
-            Notification.show("Could not prepare keys: " + e1.getMessage());
-        }
-        
-        final String publicKey = MessageUtilities.encodeKeyToBase64(pair.getPublic());
-        this.key.setText(publicKey);
-
-        final RegisterUserModel model = new RegisterUserModel(data, this.password.getValue(), publicKey);
-        final Optional<Message> response = this.service.send("http://localhost:9090/register", model);
-
-        if (response.isPresent()) {
-            final Message message = response.get();
-            Notification.show("Got response: " + message.getContent());
+        if (validServerCertificate) {
+            Notification.show("Server verified");
         } else {
-            Notification.show("No response");
+            Notification.show("Server is not secure");
         }
     }
 }

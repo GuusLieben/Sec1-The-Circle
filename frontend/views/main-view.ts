@@ -11,11 +11,10 @@ export class MainView extends LitElement {
 
   render() {
     return html`
-      <vaadin-text-field id="name" label="Name"></vaadin-text-field>
-      <vaadin-text-field id="email" label="Email"></vaadin-text-field>
-      <vaadin-text-field id="password" label="Password"></vaadin-text-field>
-      <vaadin-button id="sayHello">Request message</vaadin-button>
-      <br>
+      <vaadin-text-field id="name" label="Name"></vaadin-text-field><br>
+      <vaadin-text-field id="email" label="Email"></vaadin-text-field><br>
+      <vaadin-text-field id="password" label="Password"></vaadin-text-field><br>
+      <vaadin-button id="sayHello">Send CSR</vaadin-button><br>
       <p id="key"></p>
     `;
   }

@@ -1,10 +1,13 @@
-package nl.guuslieben.circle.common.message;
+package nl.guuslieben.circle.common.util;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -89,7 +92,7 @@ class UtilitiesTests {
 
     @Test
     void testCreateCertificate() throws Exception {
-        final KeyPair keyPair = CertificateUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         Assertions.assertNotNull(certificate);
         Assertions.assertEquals(keyPair.getPublic(), certificate.getPublicKey());
@@ -97,7 +100,7 @@ class UtilitiesTests {
 
     @Test
     void testCertificateToPem() throws Exception {
-        final KeyPair keyPair = CertificateUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         final String pem = CertificateUtilities.toPem(certificate);
         Assertions.assertNotNull(pem);
@@ -107,7 +110,7 @@ class UtilitiesTests {
 
     @Test
     void testCertificateFromPem() throws Exception {
-        final KeyPair keyPair = CertificateUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         final String pem = CertificateUtilities.toPem(certificate);
 
@@ -127,5 +130,20 @@ class UtilitiesTests {
     void testNullCertificateFromPem() {
         final Optional<X509Certificate> certificate = CertificateUtilities.fromPem(null);
         Assertions.assertFalse(certificate.isPresent());
+    }
+
+    @Test
+    void testVerifyCertificate() throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
+        Assertions.assertTrue(CertificateUtilities.verify(certificate, keyPair.getPublic()));
+    }
+
+    @Test
+    void testInvalidVerifyCertificate() throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair otherKeyPair = KeyUtilities.generateKeyPair(new UserData("Jane Doe", "jane@example.org", 1));
+        final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
+        Assertions.assertFalse(CertificateUtilities.verify(certificate, otherKeyPair.getPublic()));
     }
 }

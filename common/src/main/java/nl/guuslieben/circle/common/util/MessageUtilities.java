@@ -1,4 +1,4 @@
-package nl.guuslieben.circle.common.message;
+package nl.guuslieben.circle.common.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,20 +8,12 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
@@ -32,13 +24,9 @@ public class MessageUtilities {
 
     public static final String HASH_ALGORITHM = "SHA-512";
 
-    public static final String KEY_ALGORITHM = "RSA";
-    public static final String CIPHER_ALGORITHM = "RSA/ECB/PKCS1Padding";
-
-    public static final int INITIAL_BLOCK_SIZE = 4096;
-
     public static final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
+
     public static final String INVALID = "InvalidatedContent";
     public static final String REJECT = "Rejected#";
 
@@ -51,11 +39,11 @@ public class MessageUtilities {
         }
     }
 
-    public static <T> Optional<T> getContent(Message message, Class<T> type) {
-        try {
-            return Optional.ofNullable(MAPPER.readValue(message.getContent(), type));
+    public static <T> Optional<T> verifyContent(Message message, Class<T> type) {
+        if (verify(message)) {
+            return getContent(message, type);
         }
-        catch (JsonProcessingException e) {
+        else {
             return Optional.empty();
         }
     }
@@ -67,10 +55,11 @@ public class MessageUtilities {
         return expected.equals(actual);
     }
 
-    public static <T> Optional<T> verifyContent(Message message, Class<T> type) {
-        if (verify(message)) {
-            return getContent(message, type);
-        } else {
+    public static <T> Optional<T> getContent(Message message, Class<T> type) {
+        try {
+            return Optional.ofNullable(MAPPER.readValue(message.getContent(), type));
+        }
+        catch (JsonProcessingException e) {
             return Optional.empty();
         }
     }
@@ -118,24 +107,6 @@ public class MessageUtilities {
         }
     }
 
-    public static String encodeKeyToBase64(Key key) {
-        if (key instanceof PrivateKey) throw new IllegalArgumentException("Attempted to encode private key");
-        byte[] encodedKey = key.getEncoded();
-        return Base64.getEncoder().encodeToString(encodedKey);
-    }
-
-    public static Optional<PublicKey> decodeBase64ToKey(String base64) {
-        try {
-            byte[] keyContent = Base64.getDecoder().decode(base64);
-            KeyFactory kf = KeyFactory.getInstance(KEY_ALGORITHM);
-            KeySpec keySpecX509 = new X509EncodedKeySpec(keyContent);
-            return Optional.ofNullable(kf.generatePublic(keySpecX509));
-        }
-        catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            return Optional.empty();
-        }
-    }
-
     public static Message reject(String reason) {
         return new Message(REJECT + reason);
     }
@@ -145,7 +116,8 @@ public class MessageUtilities {
         if (rejected) {
             final String reason = message.getContent().replace(REJECT, "");
             return Optional.of(reason);
-        } else {
+        }
+        else {
             return Optional.empty();
         }
     }

@@ -22,23 +22,12 @@ public class RegisterUserModel {
     @JsonInclude(Include.NON_NULL)
     private String password;
 
-    @JsonProperty
-    @JsonInclude(Include.NON_NULL)
-    private String publicKey;
-
-    // Should only be sent by server, signed with server private, containing client public
-    @JsonProperty
-    @JsonInclude(Include.NON_NULL)
-    private String certificate;
-
     public RegisterUserModel(UserData data, String certificate) {
         this.data = data;
-        this.certificate = certificate;
     }
 
     public RegisterUserModel(UserData data, String password, String publicKey) {
         this.data = data;
         this.password = password;
-        this.publicKey = publicKey;
     }
 }
