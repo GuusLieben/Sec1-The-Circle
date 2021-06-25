@@ -8,13 +8,10 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -36,7 +33,7 @@ public class MessageUtilities {
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
     public static final String INVALID = "InvalidatedContent";
 
-    public static <T> Message fromJson(String message) {
+    public static Message fromJson(String message) {
         try {
             return MAPPER.readValue(message, Message.class);
         }
@@ -55,8 +52,8 @@ public class MessageUtilities {
     }
 
     public static boolean verify(Message message) {
-        final String actual = message.getHash();
-        final String expected = generateHash(message.getContent());
+        final var actual = message.getHash();
+        final var expected = generateHash(message.getContent());
 
         return expected.equals(actual);
     }
@@ -67,7 +64,7 @@ public class MessageUtilities {
 
     public static LocalDateTime parseTimestamp(String timestamp) {
         try {
-            final Instant instant = DATE_FORMAT.parse(timestamp).toInstant();
+            final var instant = DATE_FORMAT.parse(timestamp).toInstant();
             return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
         } catch (ParseException e) {
             return null;
@@ -76,29 +73,17 @@ public class MessageUtilities {
 
     public static String generateHash(String content) {
         try {
-            log.info("Generating hash for '" + content.replaceAll("\n", "^newLine|") + "', generating with '" + HASH_ALGORITHM + "'");
-            MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
-            byte[] messageDigest = md.digest(content.getBytes(StandardCharsets.UTF_8));
+            var md = MessageDigest.getInstance(HASH_ALGORITHM);
+            var messageDigest = md.digest(content.getBytes(StandardCharsets.UTF_8));
 
-            BigInteger no = new BigInteger(1, messageDigest);
-            String hashtext = no.toString(16);
-            while (hashtext.length() < 32) {
-                hashtext = "0" + hashtext;
+            var no = new BigInteger(1, messageDigest);
+            var hash = new StringBuilder(no.toString(16));
+            while (hash.length() < 32) {
+                hash.insert(0, "0");
             }
-            return hashtext;
+            return hash.toString();
         } catch (NoSuchAlgorithmException e) {
             return INVALID;
-        }
-    }
-
-    public static Optional<KeyPair> generateKeyPair() {
-        log.info("New key pair requested, generating with '" + KEY_ALGORITHM + "'");
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
-            kpg.initialize(INITIAL_BLOCK_SIZE);
-            return Optional.ofNullable(kpg.generateKeyPair());
-        } catch (NoSuchAlgorithmException e) {
-            return Optional.empty();
         }
     }
 
