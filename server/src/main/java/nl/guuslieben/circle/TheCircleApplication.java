@@ -16,7 +16,7 @@ public class TheCircleApplication {
     public static KeyPair KEYS;
 
     public static void main(String[] args) throws NoSuchAlgorithmException {
-        KEYS = KeyUtilities.generateKeyPair(new UserData("CIRCLE", "admin@circle.org", 48132L));
+        KEYS = KeyUtilities.generateKeyPair(new UserData("CIRCLE", "admin@circle.org"));
         final File serverPublic = KeyUtilities.getServerPublic();
 //        if (!serverPublic.exists())
         // For development purposes we'll generate the key every time the server starts

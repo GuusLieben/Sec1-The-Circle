@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -22,13 +23,17 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Optional;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 import nl.guuslieben.circle.common.UserData;
 
 public class KeyUtilities {
 
     public static final String KEY_ALGORITHM = "RSA";
-    private static final String CERTIFICATE_ALGORITHM = "RSA";
-    private static final int CERTIFICATE_BITS = 1024;
+    private static final int CERTIFICATE_BITS = 4096;
 
     public static KeyPair generateKeyPair(UserData data) throws NoSuchAlgorithmException {
         var keyPairGenerator = KeyPairGenerator.getInstance(KEY_ALGORITHM);
@@ -81,5 +86,29 @@ public class KeyUtilities {
 
     public static File getServerPublic() {
         return new File("circle-server.pub");
+    }
+
+    public static Optional<Message> decryptContent(byte[] body, PublicKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance(KEY_ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            String decrypted = new String(cipher.doFinal(body));
+            return Optional.ofNullable(MessageUtilities.fromJson(decrypted));
+        }
+        catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
+            return Optional.empty();
+        }
+    }
+
+    public static byte[] encryptContent(Message content, PrivateKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance(KEY_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            final String json = MessageUtilities.toJson(content);
+            return cipher.doFinal(json.getBytes());
+        }
+        catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
+            return null;
+        }
     }
 }

@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -19,14 +20,15 @@ import java.util.Optional;
 
 public class MessageUtilities {
 
-    public static final Logger log = LoggerFactory.getLogger(MessageUtilities.class);
-    public static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(MessageUtilities.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    public static final String HASH_ALGORITHM = "SHA-512";
+    private static final String HASH_ALGORITHM = "SHA-512";
 
-    public static final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
-    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
+    private static final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
 
+    public final static String PUBLIC_KEY = "public-key";
     public static final String INVALID = "InvalidatedContent";
     public static final String REJECT = "Rejected#";
 
@@ -107,8 +109,13 @@ public class MessageUtilities {
         }
     }
 
-    public static Message reject(String reason) {
+    public static Message reject(String reason, PrivateKey key) {
         return new Message(REJECT + reason);
+    }
+
+    public static byte[] rejectEncrypted(String reason, PrivateKey key) {
+        final Message message = reject(reason, key);
+        return KeyUtilities.encryptContent(message, key);
     }
 
     public static Optional<String> getRejection(Message message) {

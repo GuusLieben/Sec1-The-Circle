@@ -3,21 +3,26 @@ package nl.guuslieben.circle.common;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@JsonSerialize
+@AllArgsConstructor
 @NoArgsConstructor
+@JsonSerialize
 @Getter
-public final class UserData {
+public class User {
 
+    @JsonProperty
+    private String email;
     @JsonProperty
     private String name;
     @JsonProperty
-    private String email;
+    private String password;
+    @JsonProperty
+    private String key;
 
-    public UserData(@JsonProperty String name, @JsonProperty String email) {
-        this.name = name;
-        this.email = email;
+    public UserData toData() {
+        return new UserData(this.getName(), this.getEmail());
     }
 }

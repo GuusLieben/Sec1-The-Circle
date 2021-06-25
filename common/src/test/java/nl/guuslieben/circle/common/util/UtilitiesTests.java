@@ -92,7 +92,7 @@ class UtilitiesTests {
 
     @Test
     void testCreateCertificate() throws Exception {
-        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org"));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         Assertions.assertNotNull(certificate);
         Assertions.assertEquals(keyPair.getPublic(), certificate.getPublicKey());
@@ -100,7 +100,7 @@ class UtilitiesTests {
 
     @Test
     void testCertificateToPem() throws Exception {
-        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org"));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         final String pem = CertificateUtilities.toPem(certificate);
         Assertions.assertNotNull(pem);
@@ -110,7 +110,7 @@ class UtilitiesTests {
 
     @Test
     void testCertificateFromPem() throws Exception {
-        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org"));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         final String pem = CertificateUtilities.toPem(certificate);
 
@@ -134,15 +134,15 @@ class UtilitiesTests {
 
     @Test
     void testVerifyCertificate() throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org"));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         Assertions.assertTrue(CertificateUtilities.verify(certificate, keyPair.getPublic()));
     }
 
     @Test
     void testInvalidVerifyCertificate() throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
-        final KeyPair otherKeyPair = KeyUtilities.generateKeyPair(new UserData("Jane Doe", "jane@example.org", 1));
+        final KeyPair keyPair = KeyUtilities.generateKeyPair(new UserData("John Doe", "john@example.org"));
+        final KeyPair otherKeyPair = KeyUtilities.generateKeyPair(new UserData("Jane Doe", "jane@example.org"));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         Assertions.assertFalse(CertificateUtilities.verify(certificate, otherKeyPair.getPublic()));
     }
