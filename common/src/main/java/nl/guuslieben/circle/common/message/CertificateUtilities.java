@@ -6,6 +6,7 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -20,6 +21,8 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
+
+import nl.guuslieben.circle.common.UserData;
 
 public class CertificateUtilities {
 
@@ -39,9 +42,9 @@ public class CertificateUtilities {
     private CertificateUtilities() {
     }
 
-    public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
+    public static KeyPair generateKeyPair(UserData data) throws NoSuchAlgorithmException {
         var keyPairGenerator = KeyPairGenerator.getInstance(CERTIFICATE_ALGORITHM);
-        keyPairGenerator.initialize(CERTIFICATE_BITS, new SecureRandom());
+        keyPairGenerator.initialize(CERTIFICATE_BITS, new SecureRandom(data.getEmail().getBytes(StandardCharsets.UTF_8)));
         return keyPairGenerator.generateKeyPair();
     }
 

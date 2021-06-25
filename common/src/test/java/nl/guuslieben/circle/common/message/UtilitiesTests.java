@@ -9,6 +9,8 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import nl.guuslieben.circle.common.UserData;
+
 class UtilitiesTests {
 
     @Test
@@ -87,7 +89,7 @@ class UtilitiesTests {
 
     @Test
     void testCreateCertificate() throws Exception {
-        final KeyPair keyPair = CertificateUtilities.generateKeyPair();
+        final KeyPair keyPair = CertificateUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         Assertions.assertNotNull(certificate);
         Assertions.assertEquals(keyPair.getPublic(), certificate.getPublicKey());
@@ -95,7 +97,7 @@ class UtilitiesTests {
 
     @Test
     void testCertificateToPem() throws Exception {
-        final KeyPair keyPair = CertificateUtilities.generateKeyPair();
+        final KeyPair keyPair = CertificateUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         final String pem = CertificateUtilities.toPem(certificate);
         Assertions.assertNotNull(pem);
@@ -105,7 +107,7 @@ class UtilitiesTests {
 
     @Test
     void testCertificateFromPem() throws Exception {
-        final KeyPair keyPair = CertificateUtilities.generateKeyPair();
+        final KeyPair keyPair = CertificateUtilities.generateKeyPair(new UserData("John Doe", "john@example.org", 1));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         final String pem = CertificateUtilities.toPem(certificate);
 

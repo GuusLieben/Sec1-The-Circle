@@ -8,12 +8,20 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
@@ -32,6 +40,7 @@ public class MessageUtilities {
     public static final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
     public static final String INVALID = "InvalidatedContent";
+    public static final String REJECT = "Rejected#";
 
     public static Message fromJson(String message) {
         try {
@@ -58,16 +67,11 @@ public class MessageUtilities {
         return expected.equals(actual);
     }
 
-    public static String generateTimestamp() {
-        return DATE_FORMAT.format(new Date());
-    }
-
-    public static LocalDateTime parseTimestamp(String timestamp) {
-        try {
-            final var instant = DATE_FORMAT.parse(timestamp).toInstant();
-            return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-        } catch (ParseException e) {
-            return null;
+    public static <T> Optional<T> verifyContent(Message message, Class<T> type) {
+        if (verify(message)) {
+            return getContent(message, type);
+        } else {
+            return Optional.empty();
         }
     }
 
@@ -82,8 +86,23 @@ public class MessageUtilities {
                 hash.insert(0, "0");
             }
             return hash.toString();
-        } catch (NoSuchAlgorithmException e) {
+        }
+        catch (NoSuchAlgorithmException e) {
             return INVALID;
+        }
+    }
+
+    public static String generateTimestamp() {
+        return DATE_FORMAT.format(new Date());
+    }
+
+    public static LocalDateTime parseTimestamp(String timestamp) {
+        try {
+            final var instant = DATE_FORMAT.parse(timestamp).toInstant();
+            return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        }
+        catch (ParseException e) {
+            return null;
         }
     }
 
@@ -96,6 +115,38 @@ public class MessageUtilities {
         }
         catch (JsonProcessingException e) {
             return INVALID;
+        }
+    }
+
+    public static String encodeKeyToBase64(Key key) {
+        if (key instanceof PrivateKey) throw new IllegalArgumentException("Attempted to encode private key");
+        byte[] encodedKey = key.getEncoded();
+        return Base64.getEncoder().encodeToString(encodedKey);
+    }
+
+    public static Optional<PublicKey> decodeBase64ToKey(String base64) {
+        try {
+            byte[] keyContent = Base64.getDecoder().decode(base64);
+            KeyFactory kf = KeyFactory.getInstance(KEY_ALGORITHM);
+            KeySpec keySpecX509 = new X509EncodedKeySpec(keyContent);
+            return Optional.ofNullable(kf.generatePublic(keySpecX509));
+        }
+        catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            return Optional.empty();
+        }
+    }
+
+    public static Message reject(String reason) {
+        return new Message(REJECT + reason);
+    }
+
+    public static Optional<String> getRejection(Message message) {
+        final boolean rejected = message.getContent().startsWith(REJECT);
+        if (rejected) {
+            final String reason = message.getContent().replace(REJECT, "");
+            return Optional.of(reason);
+        } else {
+            return Optional.empty();
         }
     }
 }
