@@ -87,7 +87,7 @@ public class KeyUtilities {
             final var kf = KeyFactory.getInstance("RSA");
 
             return Optional.of(kf.generatePrivate(keySpec));
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+        } catch (NoSuchAlgorithmException | IllegalArgumentException | InvalidKeySpecException e) {
             return Optional.empty();
         }
     }

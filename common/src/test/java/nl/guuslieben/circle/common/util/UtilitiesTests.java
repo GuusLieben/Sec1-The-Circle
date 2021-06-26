@@ -390,6 +390,12 @@ class UtilitiesTests {
     }
 
     @Test
+    void testDecodeInvalidPrivateKey() {
+        final Optional<PrivateKey> key = KeyUtilities.decodeBase64ToPrivate("invalidBase64");
+        Assertions.assertFalse(key.isPresent());
+    }
+
+    @Test
     void testStoreAndGetCertificate() throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         final Path tempFile = Files.createTempFile("circle", "tmp");
         final UserData data = new UserData("Bob", "bob@circle.com");
@@ -409,5 +415,14 @@ class UtilitiesTests {
         Assertions.assertThrows(NullPointerException.class, () -> new LoginRequest("user", null));
         Assertions.assertThrows(NullPointerException.class, () -> new LoginRequest(null, null));
         Assertions.assertDoesNotThrow(() -> new LoginRequest("user", "pass"));
+        final LoginRequest request = new LoginRequest("user", "pass");
+        Assertions.assertEquals("user", request.getUsername());
+        Assertions.assertEquals("pass", request.getPassword());
+    }
+
+    @Test
+    void testGetNonExistingCertificate() {
+        final Optional<X509Certificate> x509Certificate = CertificateUtilities.get("fake@example.org");
+        Assertions.assertFalse(x509Certificate.isPresent());
     }
 }
