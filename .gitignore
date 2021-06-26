@@ -18,5 +18,4 @@ drivers/
 error-screenshots/
 webpack.generated.js
 */target
-circle-server.pub
-certs
+store

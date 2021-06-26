@@ -18,6 +18,7 @@ public class CircleServer {
     public static void main(String[] args) throws NoSuchAlgorithmException {
         KEYS = KeyUtilities.generateKeyPair(new UserData("CIRCLE", "admin@circle.org"));
         final File serverPublic = KeyUtilities.getServerPublic();
+        serverPublic.getParentFile().mkdirs(); // In case the parent did not exist yet
 //        if (!serverPublic.exists())
         // TODO: For development purposes we'll generate the key every time the server starts
         KeyUtilities.storeKey(serverPublic, KEYS.getPublic());

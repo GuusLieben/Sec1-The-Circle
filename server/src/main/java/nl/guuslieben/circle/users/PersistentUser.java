@@ -18,7 +18,6 @@ public class PersistentUser {
     private String email;
     private String name;
     private String password;
-    private String privateKey;
     private String cert;
 
     public static PersistentUser of(User user, String cert) {
@@ -26,7 +25,6 @@ public class PersistentUser {
                 user.getEmail(),
                 user.getName(),
                 user.getPassword(),
-                user.getKey(),
                 cert
         );
     }

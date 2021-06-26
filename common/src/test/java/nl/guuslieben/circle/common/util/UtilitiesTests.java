@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
@@ -145,5 +146,63 @@ class UtilitiesTests {
         final KeyPair otherKeyPair = KeyUtilities.generateKeyPair(new UserData("Jane Doe", "jane@example.org"));
         final X509Certificate certificate = CertificateUtilities.createCertificate(keyPair);
         Assertions.assertFalse(CertificateUtilities.verify(certificate, otherKeyPair.getPublic()));
+    }
+
+    @Test
+    void testPasswordEncryption() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final String password = "password";
+        final String encrypted = PasswordUtilities.encrypt(password, password, publicKey);
+        Assertions.assertNotNull(encrypted);
+    }
+
+    @Test
+    void testPasswordDecryption() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final String password = "password";
+        final String encrypted = PasswordUtilities.encrypt(password, password, publicKey);
+        Assertions.assertNotNull(encrypted);
+
+        final String decrypted = PasswordUtilities.decrypt(encrypted, password, publicKey);
+        Assertions.assertNotNull(decrypted);
+        Assertions.assertEquals(password, decrypted);
+    }
+
+    @Test
+    void testIncorrectPasswordDecryption() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final String password = "password";
+        final String encrypted = PasswordUtilities.encrypt(password, password, publicKey);
+        Assertions.assertNotNull(encrypted);
+
+        final String decrypted = PasswordUtilities.decrypt(encrypted, "wrongPassword", publicKey);
+        Assertions.assertNull(decrypted);
+    }
+
+    @Test
+    void testVerifyPassword() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final String password = "password";
+        final String encrypted = PasswordUtilities.encrypt(password, password, publicKey);
+        Assertions.assertNotNull(encrypted);
+
+        final boolean verified = PasswordUtilities.verify(encrypted, password, publicKey);
+        Assertions.assertTrue(verified);
+    }
+
+    @Test
+    void testVerifyIncorrectPassword() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final String password = "password";
+        final String encrypted = PasswordUtilities.encrypt(password, password, publicKey);
+        Assertions.assertNotNull(encrypted);
+
+        final boolean verified = PasswordUtilities.verify(encrypted, "wrongPassword", publicKey);
+        Assertions.assertFalse(verified);
     }
 }

@@ -12,6 +12,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -59,11 +62,11 @@ public class ClientService {
             final String publicKey = KeyUtilities.encodeKeyToBase64(this.pair.getPublic());
             headers.set(MessageUtilities.PUBLIC_KEY, publicKey);
 
-            byte[] encrypted = KeyUtilities.encryptContent(content, this.pair.getPrivate());
+            byte[] encrypted = KeyUtilities.encryptMessage(content, this.pair.getPrivate());
             HttpEntity<?> entity = new HttpEntity<>(encrypted, headers);
 
             final ResponseEntity<byte[]> response = template.postForEntity(url, entity, byte[].class);
-            return KeyUtilities.decryptContent(response.getBody(), this.serverPublic);
+            return KeyUtilities.decryptMessage(response.getBody(), this.serverPublic);
         } else {
             final ResponseEntity<Message> response = template.postForEntity(url, content, Message.class);
             return Optional.ofNullable(response.getBody());
@@ -102,5 +105,21 @@ public class ClientService {
 
         final Optional<Boolean> result = MessageUtilities.verifyContent(response.get(), boolean.class);
         return result.orElse(false);
+    }
+
+    public String store(String key, String email) {
+        try {
+            File keys = new File("store/keys");
+            keys.mkdirs();
+            final File file = new File(keys, email + ".pfx");
+            file.createNewFile();
+            FileWriter writer = new FileWriter(file);
+            writer.write(key);
+            writer.close();
+            return file.getName();
+        }
+        catch (IOException e) {
+            return null;
+        }
     }
 }

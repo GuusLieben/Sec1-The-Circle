@@ -107,7 +107,7 @@ public class ServerController {
 
     private String store(X509Certificate certificate, String email) {
         try {
-            File certs = new File("certs");
+            File certs = new File("store/certs");
             certs.mkdirs();
             final File file = new File(certs, email + "-" + System.currentTimeMillis() + ".cert");
             file.createNewFile();

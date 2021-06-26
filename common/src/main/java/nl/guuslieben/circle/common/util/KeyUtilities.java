@@ -83,7 +83,7 @@ public class KeyUtilities {
     }
 
     public static File getServerPublic() {
-        return new File("circle-server.pub");
+        return new File("store/circle-server.pub");
     }
 
     public static Optional<String> decryptContent(byte[] body, PublicKey key) {

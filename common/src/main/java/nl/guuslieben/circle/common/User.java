@@ -19,8 +19,6 @@ public class User {
     private String name;
     @JsonProperty
     private String password;
-    @JsonProperty
-    private String key;
 
     public UserData toData() {
         return new UserData(this.getName(), this.getEmail());
