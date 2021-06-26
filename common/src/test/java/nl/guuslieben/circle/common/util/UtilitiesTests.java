@@ -17,7 +17,9 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.common.UserData;
+import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
 
 class UtilitiesTests {
 
@@ -319,6 +321,16 @@ class UtilitiesTests {
     }
 
     @Test
+    void testVerifyInvalidContent() throws NoSuchFieldException, IllegalAccessException {
+        final Message message = new Message("{\"name\":\"Circle\"}");
+        final Field hash = Message.class.getDeclaredField("hash");
+        hash.setAccessible(true);
+        hash.set(message, "notARealHash");
+        final Optional<TestObject> testObject = MessageUtilities.verifyContent(message, TestObject.class);
+        Assertions.assertFalse(testObject.isPresent());
+    }
+
+    @Test
     void testEncryptedRejectMessage() throws NoSuchAlgorithmException {
         final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
         final PrivateKey privateKey = pair.getPrivate();
@@ -333,5 +345,35 @@ class UtilitiesTests {
         final Optional<String> rejection = MessageUtilities.getRejection(message);
         Assertions.assertTrue(rejection.isPresent());
         Assertions.assertEquals("reason", rejection.get());
+    }
+
+    @Test
+    void testNotRejected() {
+        final Message message = new Message(new TestObject("Name"));
+        final Optional<String> rejection = MessageUtilities.getRejection(message);
+        Assertions.assertFalse(rejection.isPresent());
+    }
+
+    @Test
+    void testCSRHasEmptyCertificateOnCreation() {
+        final CertificateSigningRequest request = CertificateSigningRequest.create("key");
+        Assertions.assertNull(request.getCertificate());
+        Assertions.assertEquals("key", request.getPublicKey());
+    }
+
+    @Test
+    void testCSRHasEmptyKeyOnAccepted() {
+        final CertificateSigningRequest request = CertificateSigningRequest.accept("cert");
+        Assertions.assertNull(request.getPublicKey());
+        Assertions.assertEquals("cert", request.getCertificate());
+    }
+
+    @Test
+    void testToUserData() {
+        final User user = new User("bob@circle.com", "Bob", "1234");
+        final UserData data = user.toData();
+        Assertions.assertNotNull(data);
+        Assertions.assertEquals("bob@circle.com", data.getEmail());
+        Assertions.assertEquals("Bob", data.getName());
     }
 }
