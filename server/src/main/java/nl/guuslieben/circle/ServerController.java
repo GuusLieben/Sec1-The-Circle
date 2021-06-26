@@ -6,9 +6,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -92,9 +89,17 @@ public class ServerController {
     @PostMapping("login")
     public byte[] login(@RequestBody byte[] body, @RequestHeader(MessageUtilities.PUBLIC_KEY) String publicKey) {
         return this.process(body, publicKey, LoginRequest.class, request -> {
-            // TODO: Login process
+            final String username = request.getUsername();
+            final Optional<PersistentUser> user = this.userRepository.findById(username);
+            if (user.isEmpty()) return MessageUtilities.rejectMessage("No user with that name exists");
 
-            return new Message("");
+            final PersistentUser persistentUser = user.get();
+            final boolean passwordValid = persistentUser.getPassword().equals(request.getPassword());
+
+            if (!passwordValid) return MessageUtilities.rejectMessage("Incorrect password");
+
+            final UserData userData = new UserData(persistentUser.getName(), persistentUser.getEmail());
+            return new Message(userData);
         });
     }
 

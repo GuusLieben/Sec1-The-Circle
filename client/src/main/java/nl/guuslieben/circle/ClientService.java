@@ -20,11 +20,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import lombok.Getter;
+import lombok.Setter;
 import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.common.UserData;
 import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
+import nl.guuslieben.circle.common.rest.LoginRequest;
 import nl.guuslieben.circle.common.util.CertificateUtilities;
 import nl.guuslieben.circle.common.util.KeyUtilities;
 import nl.guuslieben.circle.common.util.Message;
@@ -33,8 +36,11 @@ import nl.guuslieben.circle.common.util.MessageUtilities;
 @Service
 public class ClientService {
 
-    @Getter
+    private static final String BASE_URL = "http://localhost:9090/";
+
+    @Setter
     private KeyPair pair;
+    private String email;
     @Getter
     private final PublicKey serverPublic;
     private final RestTemplateBuilder templateBuilder;
@@ -50,6 +56,7 @@ public class ClientService {
     }
 
     public Optional<Message> send(String url, Object body, boolean encrypt) {
+        url = BASE_URL + url;
         final Message content = new Message(body);
         RestTemplate template = this.templateBuilder.build();
 
@@ -59,10 +66,10 @@ public class ClientService {
         headers.set(HttpHeaders.CONNECTION, "keep-alive");
 
         if (encrypt) {
-            final String publicKey = KeyUtilities.encodeKeyToBase64(this.pair.getPublic());
+            final String publicKey = KeyUtilities.encodeKeyToBase64(this.getPair(this.email).getPublic());
             headers.set(MessageUtilities.PUBLIC_KEY, publicKey);
 
-            byte[] encrypted = KeyUtilities.encryptMessage(content, this.pair.getPrivate());
+            byte[] encrypted = KeyUtilities.encryptMessage(content, this.getPair(this.email).getPrivate());
             HttpEntity<?> entity = new HttpEntity<>(encrypted, headers);
 
             final ResponseEntity<byte[]> response = template.postForEntity(url, entity, byte[].class);
@@ -74,19 +81,10 @@ public class ClientService {
     }
 
     public Optional<X509Certificate> csr(UserData data, String password) {
-        try {
-            // TODO: null-check for development purposes only, remove once done
-            if (this.pair == null)
-                this.pair = KeyUtilities.generateKeyPair(data);
-        }
-        catch (NoSuchAlgorithmException e1) {
-            Notification.show("Could not prepare keys: " + e1.getMessage());
-        }
-
-        final String publicKey = KeyUtilities.encodeKeyToBase64(this.pair.getPublic());
+        final String publicKey = KeyUtilities.encodeKeyToBase64(this.getPair(data.getEmail()).getPublic());
 
         final CertificateSigningRequest model = CertificateSigningRequest.create(publicKey);
-        final Optional<Message> response = this.send("http://localhost:9090/csr", model, false);
+        final Optional<Message> response = this.send("csr", model, false);
         if (response.isPresent()) {
             final Message message = response.get();
             final Optional<CertificateSigningRequest> request = MessageUtilities.verifyContent(message, CertificateSigningRequest.class);
@@ -99,12 +97,27 @@ public class ClientService {
         return Optional.empty();
     }
 
-    public boolean register(User user) {
-        final Optional<Message> response = this.send("http://localhost:9090/register", user, true);
-        if (response.isEmpty()) return false;
+    private <T> ServerResponse<T> response(Optional<Message> response, Class<T> type, Supplier<T> defaultValue) {
+        if (response.isEmpty()) return new ServerResponse<>("Could not verify response");
 
-        final Optional<Boolean> result = MessageUtilities.verifyContent(response.get(), boolean.class);
-        return result.orElse(false);
+        final Message message = response.get();
+        final Optional<String> rejection = MessageUtilities.getRejection(message);
+        if (rejection.isPresent()) return new ServerResponse<>(rejection.get());
+
+        final Optional<T> result = MessageUtilities.verifyContent(message, type);
+        return new ServerResponse<>(result.orElseGet(defaultValue));
+    }
+
+    public ServerResponse<Boolean> register(User user) {
+        this.email = user.getEmail();
+        final Optional<Message> response = this.send("register", user, true);
+        return this.response(response, boolean.class, () -> false);
+    }
+
+    public ServerResponse<UserData> login(LoginRequest loginRequest) {
+        this.email = loginRequest.getUsername();
+        final Optional<Message> response = this.send("login", loginRequest, true);
+        return this.response(response, UserData.class, () -> null);
     }
 
     public String store(String key, String email) {
@@ -121,5 +134,18 @@ public class ClientService {
         catch (IOException e) {
             return null;
         }
+    }
+
+    public KeyPair getPair(String email) {
+        try {
+            if (this.pair == null) {
+                Notification.show("Generating keys..");
+                this.pair = KeyUtilities.generateKeyPair(new UserData(null, email));
+            }
+        }
+        catch (NoSuchAlgorithmException e1) {
+            Notification.show("Could not prepare keys: " + e1.getMessage());
+        }
+        return this.pair;
     }
 }
