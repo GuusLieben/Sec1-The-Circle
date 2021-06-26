@@ -11,7 +11,7 @@ import nl.guuslieben.circle.common.UserData;
 import nl.guuslieben.circle.common.util.KeyUtilities;
 
 @SpringBootApplication
-public class TheCircleApplication {
+public class CircleServer {
 
     public static KeyPair KEYS;
 
@@ -19,10 +19,10 @@ public class TheCircleApplication {
         KEYS = KeyUtilities.generateKeyPair(new UserData("CIRCLE", "admin@circle.org"));
         final File serverPublic = KeyUtilities.getServerPublic();
 //        if (!serverPublic.exists())
-        // For development purposes we'll generate the key every time the server starts
+        // TODO: For development purposes we'll generate the key every time the server starts
         KeyUtilities.storeKey(serverPublic, KEYS.getPublic());
 
-        SpringApplication.run(TheCircleApplication.class, args);
+        SpringApplication.run(CircleServer.class, args);
     }
 
 }

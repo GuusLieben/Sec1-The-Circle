@@ -49,7 +49,7 @@ public class ServerController {
 
             if (userKey.isPresent()) {
                 try {
-                    final KeyPair pair = new KeyPair(userKey.get(), TheCircleApplication.KEYS.getPrivate());
+                    final KeyPair pair = new KeyPair(userKey.get(), CircleServer.KEYS.getPrivate());
                     final X509Certificate certificate = CertificateUtilities.createCertificate(pair);
                     certificateCache.put(KeyUtilities.encodeKeyToBase64(userKey.get()), certificate);
                     final String pem = CertificateUtilities.toPem(certificate);
@@ -57,28 +57,28 @@ public class ServerController {
                     return new Message(model);
                 }
                 catch (CertificateEncodingException | SignatureException | InvalidKeyException e) {
-                    return MessageUtilities.reject("Could not create certificate", TheCircleApplication.KEYS.getPrivate());
+                    return MessageUtilities.reject("Could not create certificate", CircleServer.KEYS.getPrivate());
                 }
 
             } else {
-                return MessageUtilities.reject("Invalid invalid key", TheCircleApplication.KEYS.getPrivate());
+                return MessageUtilities.reject("Invalid invalid key", CircleServer.KEYS.getPrivate());
             }
 
         } else {
-            return MessageUtilities.reject("Invalid model", TheCircleApplication.KEYS.getPrivate());
+            return MessageUtilities.reject("Invalid model", CircleServer.KEYS.getPrivate());
         }
     }
 
     @PostMapping("register")
     public byte[] register(@RequestBody byte[] body, @RequestHeader(MessageUtilities.PUBLIC_KEY) String publicKey) throws CertificateEncodingException {
         final X509Certificate x509Certificate = certificateCache.get(publicKey);
-        if (x509Certificate == null) return MessageUtilities.rejectEncrypted("Ensure CSR is run before registering a user", TheCircleApplication.KEYS.getPrivate());
+        if (x509Certificate == null) return MessageUtilities.rejectEncrypted("Ensure CSR is run before registering a user", CircleServer.KEYS.getPrivate());
 
         final Optional<Message> message = this.parse(body, publicKey);
-        if (message.isEmpty()) return MessageUtilities.rejectEncrypted("Could not decrypt content", TheCircleApplication.KEYS.getPrivate());
+        if (message.isEmpty()) return MessageUtilities.rejectEncrypted("Could not decrypt content", CircleServer.KEYS.getPrivate());
 
         final Optional<User> userModel = MessageUtilities.verifyContent(message.get(), User.class);
-        if (userModel.isEmpty()) return MessageUtilities.rejectEncrypted("Invalid model", TheCircleApplication.KEYS.getPrivate());
+        if (userModel.isEmpty()) return MessageUtilities.rejectEncrypted("Invalid model", CircleServer.KEYS.getPrivate());
 
         final User user = userModel.get();
 
@@ -86,7 +86,7 @@ public class ServerController {
 
         final PersistentUser persistentUser = PersistentUser.of(user, certFile);
         final Optional<PersistentUser> byId = this.userRepository.findById(user.getEmail());
-        if (byId.isPresent()) return MessageUtilities.rejectEncrypted("User already exists", TheCircleApplication.KEYS.getPrivate());
+        if (byId.isPresent()) return MessageUtilities.rejectEncrypted("User already exists", CircleServer.KEYS.getPrivate());
 
         this.userRepository.save(persistentUser);
 
