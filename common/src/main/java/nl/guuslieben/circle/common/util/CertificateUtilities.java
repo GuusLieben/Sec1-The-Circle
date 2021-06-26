@@ -99,13 +99,14 @@ public class CertificateUtilities {
 
     public static String store(X509Certificate certificate, String email) {
         try {
-            CERTS.mkdirs();
             final var file = new File(CERTS, email + ".cert");
-            file.createNewFile();
+            if (!(CERTS.mkdirs() && file.createNewFile()))
+                return null;
+            
             final var pem = CertificateUtilities.toPem(certificate);
-            var writer = new FileWriter(file);
-            writer.write(pem);
-            writer.close();
+            try (var writer = new FileWriter(file)) {
+                writer.write(pem);
+            }
             return file.getName();
         }
         catch (CertificateEncodingException | IOException e) {
