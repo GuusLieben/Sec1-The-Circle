@@ -137,7 +137,7 @@ public class MainView extends LitTemplate {
 
         final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(username);
         if (x509Certificate.isEmpty()) {
-            Notification.show("No certificate present for user");
+            Notification.show("Could not verify account");
             return;
         }
 
@@ -146,7 +146,7 @@ public class MainView extends LitTemplate {
 
         final Optional<PrivateKey> privateKey = this.getPrivateKey(username, password, publicKey);
         if (privateKey.isEmpty()) {
-            Notification.show("Could not collect keys");
+            Notification.show("Could not verify account");
             return;
         }
 
@@ -173,6 +173,9 @@ public class MainView extends LitTemplate {
             final String encodedKey = lines.get(0);
 
             final String decrypted = PasswordUtilities.decrypt(encodedKey, password, publicKey);
+
+            if (decrypted == null) return Optional.empty();
+
             return KeyUtilities.decodeBase64ToPrivate(decrypted);
         }
         catch (IOException e) {
