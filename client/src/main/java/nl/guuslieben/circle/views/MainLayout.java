@@ -1,23 +1,26 @@
 package nl.guuslieben.circle.views;
 
-import java.util.Optional;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.tabs.TabsVariant;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.RouterLink;
+
+import java.util.Optional;
+
+import nl.guuslieben.circle.views.main.LoginView;
 import nl.guuslieben.circle.views.main.MainView;
+import nl.guuslieben.circle.views.main.RegisterView;
 
 /**
  * The main view is a top-level placeholder for other views.
@@ -26,12 +29,17 @@ public class MainLayout extends AppLayout {
 
     private final Tabs menu;
     private H1 viewTitle;
+    private Avatar avatar;
 
     public MainLayout() {
-        setPrimarySection(Section.DRAWER);
-        addToNavbar(true, createHeaderContent());
-        menu = createMenu();
-        addToDrawer(createDrawerContent(menu));
+        this.setPrimarySection(Section.DRAWER);
+        this.addToNavbar(true, this.createHeaderContent());
+        this.menu = this.createMenu();
+        this.addToDrawer(this.createDrawerContent(this.menu));
+    }
+
+    public void setAvatarName(String name) {
+        this.avatar.setName(name);
     }
 
     private Component createHeaderContent() {
@@ -42,11 +50,12 @@ public class MainLayout extends AppLayout {
         layout.setSpacing(false);
         layout.setAlignItems(FlexComponent.Alignment.CENTER);
         layout.add(new DrawerToggle());
-        viewTitle = new H1();
-        layout.add(viewTitle);
-        Avatar avatar = new Avatar();
-        avatar.addClassNames("ms-auto", "me-m");
-        layout.add(avatar);
+        this.viewTitle = new H1();
+        layout.add(this.viewTitle);
+
+        this.avatar = new Avatar();
+        this.avatar.addClassNames("ms-auto", "me-m");
+        layout.add(this.avatar);
         return layout;
     }
 
@@ -54,16 +63,18 @@ public class MainLayout extends AppLayout {
         VerticalLayout layout = new VerticalLayout();
         layout.setClassName("sidemenu-menu");
         layout.setSizeFull();
-        layout.setPadding(false);
+        layout.setPadding(true);
         layout.setSpacing(false);
         layout.getThemeList().set("spacing-s", true);
         layout.setAlignItems(FlexComponent.Alignment.STRETCH);
+
         HorizontalLayout logoLayout = new HorizontalLayout();
         logoLayout.setId("logo");
         logoLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         logoLayout.add(new Image("images/logo.png", "The Circle logo"));
         logoLayout.add(new H1("The Circle"));
         layout.add(logoLayout, menu);
+
         return layout;
     }
 
@@ -72,12 +83,16 @@ public class MainLayout extends AppLayout {
         tabs.setOrientation(Tabs.Orientation.VERTICAL);
         tabs.addThemeVariants(TabsVariant.LUMO_MINIMAL);
         tabs.setId("tabs");
-        tabs.add(createMenuItems());
+        tabs.add(this.createMenuItems());
         return tabs;
     }
 
     private Component[] createMenuItems() {
-        return new Tab[]{createTab("Home", MainView.class)};
+        return new Tab[]{
+                createTab("Home", MainView.class),
+                createTab("Login", LoginView.class),
+                createTab("Register", RegisterView.class),
+        };
     }
 
     private static Tab createTab(String text, Class<? extends Component> navigationTarget) {
@@ -90,17 +105,20 @@ public class MainLayout extends AppLayout {
     @Override
     protected void afterNavigation() {
         super.afterNavigation();
-        getTabForComponent(getContent()).ifPresent(menu::setSelectedTab);
-        viewTitle.setText(getCurrentPageTitle());
+        this.getTabForComponent(this.getContent()).ifPresent(this.menu::setSelectedTab);
+        this.viewTitle.setText(this.getCurrentPageTitle());
+        if (this.getContent() instanceof LoginView) {
+            ((LoginView) this.getContent()).setAfterLogin(data -> this.setAvatarName(data.getName()));
+        }
     }
 
     private Optional<Tab> getTabForComponent(Component component) {
-        return menu.getChildren().filter(tab -> ComponentUtil.getData(tab, Class.class).equals(component.getClass()))
+        return this.menu.getChildren().filter(tab -> ComponentUtil.getData(tab, Class.class).equals(component.getClass()))
                 .findFirst().map(Tab.class::cast);
     }
 
     private String getCurrentPageTitle() {
-        PageTitle title = getContent().getClass().getAnnotation(PageTitle.class);
+        PageTitle title = this.getContent().getClass().getAnnotation(PageTitle.class);
         return title == null ? "" : title.value();
     }
 }

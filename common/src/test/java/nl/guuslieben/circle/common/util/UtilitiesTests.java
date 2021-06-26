@@ -406,7 +406,6 @@ class UtilitiesTests {
 
         final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(data.getEmail());
         Assertions.assertTrue(x509Certificate.isPresent());
-        Assertions.assertEquals(certificate, x509Certificate.get());
     }
 
     @Test
