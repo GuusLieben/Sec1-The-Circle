@@ -12,10 +12,12 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Optional;
@@ -68,12 +70,24 @@ public class KeyUtilities {
 
     public static Optional<PublicKey> decodeBase64ToKey(String base64) {
         try {
-            var keyContent = Base64.getDecoder().decode(base64);
-            var kf = KeyFactory.getInstance(KEY_ALGORITHM);
-            KeySpec keySpecX509 = new X509EncodedKeySpec(keyContent);
+            final var keyContent = Base64.getDecoder().decode(base64);
+            final var kf = KeyFactory.getInstance(KEY_ALGORITHM);
+            final KeySpec keySpecX509 = new X509EncodedKeySpec(keyContent);
             return Optional.ofNullable(kf.generatePublic(keySpecX509));
         }
         catch (NoSuchAlgorithmException | InvalidKeySpecException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<PrivateKey> decodeBase64ToPrivate(String base64) {
+        try {
+            final var encoded = Base64.getDecoder().decode(base64);
+            final KeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
+            final var kf = KeyFactory.getInstance("RSA");
+
+            return Optional.of(kf.generatePrivate(keySpec));
+        } catch (NoSuchAlgorithmException | IllegalArgumentException | InvalidKeySpecException e) {
             return Optional.empty();
         }
     }

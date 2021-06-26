@@ -6,9 +6,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -18,14 +15,16 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
+import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.common.UserData;
+import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
+import nl.guuslieben.circle.common.rest.LoginRequest;
 import nl.guuslieben.circle.common.util.CertificateUtilities;
 import nl.guuslieben.circle.common.util.KeyUtilities;
 import nl.guuslieben.circle.common.util.Message;
 import nl.guuslieben.circle.common.util.MessageUtilities;
-import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
-import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.users.PersistentUser;
 import nl.guuslieben.circle.users.UserRepository;
 
@@ -70,27 +69,38 @@ public class ServerController {
     }
 
     @PostMapping("register")
-    public byte[] register(@RequestBody byte[] body, @RequestHeader(MessageUtilities.PUBLIC_KEY) String publicKey) throws CertificateEncodingException {
+    public byte[] register(@RequestBody byte[] body, @RequestHeader(MessageUtilities.PUBLIC_KEY) String publicKey) {
         final X509Certificate x509Certificate = certificateCache.get(publicKey);
         if (x509Certificate == null) return MessageUtilities.rejectEncrypted("Ensure CSR is run before registering a user", CircleServer.KEYS.getPrivate());
 
-        final Optional<Message> message = this.parse(body, publicKey);
-        if (message.isEmpty()) return MessageUtilities.rejectEncrypted("Could not decrypt content", CircleServer.KEYS.getPrivate());
+        return this.process(body, publicKey, User.class, user -> {
+            final String certFile = CertificateUtilities.store(x509Certificate, user.getEmail());
 
-        final Optional<User> userModel = MessageUtilities.verifyContent(message.get(), User.class);
-        if (userModel.isEmpty()) return MessageUtilities.rejectEncrypted("Invalid model", CircleServer.KEYS.getPrivate());
+            final PersistentUser persistentUser = PersistentUser.of(user, certFile);
+            final Optional<PersistentUser> byId = this.userRepository.findById(user.getEmail());
+            if (byId.isPresent()) return MessageUtilities.rejectMessage("User already exists");
 
-        final User user = userModel.get();
+            this.userRepository.save(persistentUser);
 
-        final String certFile = this.store(x509Certificate, user.getEmail());
+            return new Message(true);
+        });
+    }
 
-        final PersistentUser persistentUser = PersistentUser.of(user, certFile);
-        final Optional<PersistentUser> byId = this.userRepository.findById(user.getEmail());
-        if (byId.isPresent()) return MessageUtilities.rejectEncrypted("User already exists", CircleServer.KEYS.getPrivate());
+    @PostMapping("login")
+    public byte[] login(@RequestBody byte[] body, @RequestHeader(MessageUtilities.PUBLIC_KEY) String publicKey) {
+        return this.process(body, publicKey, LoginRequest.class, request -> {
+            final String username = request.getUsername();
+            final Optional<PersistentUser> user = this.userRepository.findById(username);
+            if (user.isEmpty()) return MessageUtilities.rejectMessage("No user with that name exists");
 
-        this.userRepository.save(persistentUser);
+            final PersistentUser persistentUser = user.get();
+            final boolean passwordValid = persistentUser.getPassword().equals(request.getPassword());
 
-        return KeyUtilities.encryptMessage(new Message(true), CircleServer.KEYS.getPrivate());
+            if (!passwordValid) return MessageUtilities.rejectMessage("Incorrect password");
+
+            final UserData userData = new UserData(persistentUser.getName(), persistentUser.getEmail());
+            return new Message(userData);
+        });
     }
 
     @GetMapping
@@ -98,28 +108,21 @@ public class ServerController {
         return new Message(new UserData("Sample", "john@example.com"));
     }
 
+    private <T> byte[] process(byte[] body, String publicKey, Class<T> type, Function<T, Message> function) {
+        final Optional<Message> message = this.parse(body, publicKey);
+        if (message.isEmpty()) return MessageUtilities.rejectEncrypted("Could not decrypt content", CircleServer.KEYS.getPrivate());
+
+        final Optional<T> model = MessageUtilities.verifyContent(message.get(), type);
+        if (model.isEmpty()) return MessageUtilities.rejectEncrypted("Invalid model", CircleServer.KEYS.getPrivate());
+
+        return KeyUtilities.encryptMessage(function.apply(model.get()), CircleServer.KEYS.getPrivate());
+    }
+
     private Optional<Message> parse(byte[] body, String publicKey) {
         final Optional<PublicKey> key = KeyUtilities.decodeBase64ToKey(publicKey);
         if (key.isEmpty()) return Optional.empty();
 
         return KeyUtilities.decryptMessage(body, key.get());
-    }
-
-    private String store(X509Certificate certificate, String email) {
-        try {
-            var certs = new File("store/certs");
-            certs.mkdirs();
-            final var file = new File(certs, email + "-" + System.currentTimeMillis() + ".cert");
-            file.createNewFile();
-            final var pem = CertificateUtilities.toPem(certificate);
-            var writer = new FileWriter(file);
-            writer.write(pem);
-            writer.close();
-            return file.getName();
-        }
-        catch (CertificateEncodingException | IOException e) {
-            return null;
-        }
     }
 
 }

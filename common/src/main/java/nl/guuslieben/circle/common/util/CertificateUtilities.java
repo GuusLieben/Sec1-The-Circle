@@ -5,7 +5,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -20,6 +24,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 public class CertificateUtilities {
@@ -30,6 +35,7 @@ public class CertificateUtilities {
     private static final String CERTIFICATE_DN = "CN=cn, O=o, L=L, ST=il, C= c";
     private static final String CF_INSTANCE = "X509";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
+    private static final File CERTS = new File("store/certs");
 
 
     static {
@@ -88,6 +94,38 @@ public class CertificateUtilities {
         }
         catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
             return false;
+        }
+    }
+
+    public static String store(X509Certificate certificate, String email) {
+        try {
+            final var file = new File(CERTS, email + ".cert");
+            if (!(CERTS.mkdirs() && file.createNewFile()))
+                return null;
+            
+            final var pem = CertificateUtilities.toPem(certificate);
+            try (var writer = new FileWriter(file)) {
+                writer.write(pem);
+            }
+            return file.getName();
+        }
+        catch (CertificateEncodingException | IOException e) {
+            return null;
+        }
+    }
+
+    public static Optional<X509Certificate> get(String email) {
+        final var file = new File(CERTS, email + ".cert");
+        if (!file.exists()) return Optional.empty();
+
+        try {
+            final List<String> lines = Files.readAllLines(file.toPath());
+            final var content = String.join(LINE_SEPARATOR, lines);
+
+            return fromPem(content);
+        }
+        catch (IOException e) {
+            return Optional.empty();
         }
     }
 }

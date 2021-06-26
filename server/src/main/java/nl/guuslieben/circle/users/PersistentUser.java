@@ -5,6 +5,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import nl.guuslieben.circle.common.User;
 
@@ -12,6 +13,7 @@ import nl.guuslieben.circle.common.User;
 @Table(name = "users")
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
 public class PersistentUser {
 
     @Id
