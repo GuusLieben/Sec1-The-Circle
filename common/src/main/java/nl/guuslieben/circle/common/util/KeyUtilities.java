@@ -14,7 +14,6 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
@@ -67,7 +66,6 @@ public class KeyUtilities {
     }
 
     public static String encodeKeyToBase64(Key key) {
-        if (key instanceof PrivateKey) throw new IllegalArgumentException("Attempted to encode private key");
         byte[] encodedKey = key.getEncoded();
         return Base64.getEncoder().encodeToString(encodedKey);
     }
@@ -88,24 +86,33 @@ public class KeyUtilities {
         return new File("circle-server.pub");
     }
 
-    public static Optional<Message> decryptContent(byte[] body, PublicKey key) {
+    public static Optional<String> decryptContent(byte[] body, PublicKey key) {
         try {
             Cipher cipher = Cipher.getInstance(KEY_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, key);
             String decrypted = new String(cipher.doFinal(body));
-            return Optional.ofNullable(MessageUtilities.fromJson(decrypted));
+            return Optional.ofNullable(decrypted);
         }
         catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
             return Optional.empty();
         }
+
     }
 
-    public static byte[] encryptContent(Message content, PrivateKey key) {
+    public static Optional<Message> decryptMessage(byte[] body, PublicKey key) {
+        return decryptContent(body, key).map(MessageUtilities::fromJson);
+    }
+
+    public static byte[] encryptMessage(Message content, Key key) {
+        final String json = MessageUtilities.toJson(content);
+        return encryptContent(json, key);
+    }
+
+    public static byte[] encryptContent(String content, Key key) {
         try {
             Cipher cipher = Cipher.getInstance(KEY_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
-            final String json = MessageUtilities.toJson(content);
-            return cipher.doFinal(json.getBytes());
+            return cipher.doFinal(content.getBytes());
         }
         catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
             return null;

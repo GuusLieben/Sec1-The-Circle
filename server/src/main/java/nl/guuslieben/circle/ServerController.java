@@ -90,7 +90,7 @@ public class ServerController {
 
         this.userRepository.save(persistentUser);
 
-        return KeyUtilities.encryptContent(new Message(true), TheCircleApplication.KEYS.getPrivate());
+        return KeyUtilities.encryptMessage(new Message(true), CircleServer.KEYS.getPrivate());
     }
 
     @GetMapping
@@ -102,7 +102,7 @@ public class ServerController {
         final Optional<PublicKey> key = KeyUtilities.decodeBase64ToKey(publicKey);
         if (key.isEmpty()) return Optional.empty();
 
-        return KeyUtilities.decryptContent(body, key.get());
+        return KeyUtilities.decryptMessage(body, key.get());
     }
 
     private String store(X509Certificate certificate, String email) {

@@ -115,7 +115,7 @@ public class MessageUtilities {
 
     public static byte[] rejectEncrypted(String reason, PrivateKey key) {
         final Message message = reject(reason, key);
-        return KeyUtilities.encryptContent(message, key);
+        return KeyUtilities.encryptMessage(message, key);
     }
 
     public static Optional<String> getRejection(Message message) {
