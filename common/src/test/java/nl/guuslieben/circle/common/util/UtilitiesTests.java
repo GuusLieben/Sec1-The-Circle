@@ -3,10 +3,14 @@ package nl.guuslieben.circle.common.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
@@ -204,5 +208,130 @@ class UtilitiesTests {
 
         final boolean verified = PasswordUtilities.verify(encrypted, "wrongPassword", publicKey);
         Assertions.assertFalse(verified);
+    }
+
+    @Test
+    void testEncodeKey() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final String encoded = KeyUtilities.encodeKeyToBase64(publicKey);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(736, encoded.length());
+    }
+
+    @Test
+    void testDecodeKey() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final String encoded = KeyUtilities.encodeKeyToBase64(publicKey);
+        final Optional<PublicKey> key = KeyUtilities.decodeBase64ToKey(encoded);
+        Assertions.assertTrue(key.isPresent());
+        Assertions.assertEquals(publicKey, key.get());
+    }
+
+    @Test
+    void testDecodeIncorrectKey() {
+        final Optional<PublicKey> key = KeyUtilities.decodeBase64ToKey("invalidBase64");
+        Assertions.assertFalse(key.isPresent());
+    }
+
+    @Test
+    void testEncryptMessage() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PrivateKey privateKey = pair.getPrivate();
+        final Message message = new Message("content");
+        final byte[] bytes = KeyUtilities.encryptMessage(message, privateKey);
+        Assertions.assertNotNull(bytes);
+        Assertions.assertNotEquals(0, bytes.length);
+    }
+
+    @Test
+    void testEncryptContent() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PrivateKey privateKey = pair.getPrivate();
+        final String content = "content";
+        final byte[] bytes = KeyUtilities.encryptContent(content, privateKey);
+        Assertions.assertNotNull(bytes);
+        Assertions.assertNotEquals(0, bytes.length);
+    }
+
+    @Test
+    void testEncryptInvalidContent() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PrivateKey privateKey = pair.getPrivate();
+        final byte[] bytes = KeyUtilities.encryptContent(null, privateKey);
+        Assertions.assertNotNull(bytes);
+        Assertions.assertEquals(0, bytes.length);
+    }
+
+    @Test
+    void testDecryptMessage() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PrivateKey privateKey = pair.getPrivate();
+        final Message message = new Message("content");
+        final byte[] bytes = KeyUtilities.encryptMessage(message, privateKey);
+
+        final PublicKey publicKey = pair.getPublic();
+        final Optional<Message> decrypted = KeyUtilities.decryptMessage(bytes, publicKey);
+        Assertions.assertTrue(decrypted.isPresent());
+        Assertions.assertEquals(message, decrypted.get());
+    }
+
+    @Test
+    void testDecryptContent() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PrivateKey privateKey = pair.getPrivate();
+        final String content = "content";
+        final byte[] bytes = KeyUtilities.encryptContent(content, privateKey);
+
+        final PublicKey publicKey = pair.getPublic();
+        final Optional<String> decrypted = KeyUtilities.decryptContent(bytes, publicKey);
+        Assertions.assertTrue(decrypted.isPresent());
+        Assertions.assertEquals(content, decrypted.get());
+    }
+
+    @Test
+    void testDecryptInvalidContent() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        final Optional<String> decrypted = KeyUtilities.decryptContent(new byte[] {1,2,3}, publicKey);
+        Assertions.assertFalse(decrypted.isPresent());
+    }
+
+    @Test
+    void testStoreAndGetKey() throws IOException, NoSuchAlgorithmException {
+        final Path tempFile = Files.createTempFile("circle", "tmp");
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PublicKey publicKey = pair.getPublic();
+        Assertions.assertDoesNotThrow(() -> KeyUtilities.storeKey(tempFile.toFile(), publicKey));
+
+        final Optional<PublicKey> fileKey = KeyUtilities.getPublicKeyFromFile(tempFile.toFile());
+        Assertions.assertTrue(fileKey.isPresent());
+        Assertions.assertEquals(publicKey, fileKey.get());
+    }
+
+    @Test
+    void testVerifyContent() {
+        final Message message = new Message(new TestObject("Test"));
+        final Optional<TestObject> testObject = MessageUtilities.verifyContent(message, TestObject.class);
+        Assertions.assertTrue(testObject.isPresent());
+        Assertions.assertEquals("Test", testObject.get().getName());
+    }
+
+    @Test
+    void testEncryptedRejectMessage() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PrivateKey privateKey = pair.getPrivate();
+        final byte[] bytes = MessageUtilities.rejectEncrypted("reason", privateKey);
+        Assertions.assertNotNull(bytes);
+        Assertions.assertNotEquals(0, bytes.length);
+    }
+
+    @Test
+    void testRejection() {
+        final Message message = MessageUtilities.rejectMessage("reason");
+        final Optional<String> rejection = MessageUtilities.getRejection(message);
+        Assertions.assertTrue(rejection.isPresent());
+        Assertions.assertEquals("reason", rejection.get());
     }
 }

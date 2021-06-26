@@ -30,7 +30,6 @@ import nl.guuslieben.circle.common.UserData;
 public class KeyUtilities {
 
     public static final String KEY_ALGORITHM = "RSA";
-    public static final String CIPHER_ALGORITHM = "RSA/None/OAEPWithSHA-1AndMGF1Padding";
     private static final int CERTIFICATE_BITS = 4096;
 
     private KeyUtilities() {
@@ -43,9 +42,10 @@ public class KeyUtilities {
     }
 
     public static void storeKey(File out, Key key) throws IOException {
-        var stream = new FileOutputStream(out);
-        byte[] encoded = key.getEncoded();
-        stream.write(encoded);
+        try (var stream = new FileOutputStream(out)) {
+            byte[] encoded = key.getEncoded();
+            stream.write(encoded);
+        }
     }
 
     public static Optional<PublicKey> getPublicKeyFromFile(File file) {
@@ -73,7 +73,7 @@ public class KeyUtilities {
             KeySpec keySpecX509 = new X509EncodedKeySpec(keyContent);
             return Optional.ofNullable(kf.generatePublic(keySpecX509));
         }
-        catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+        catch (NoSuchAlgorithmException | InvalidKeySpecException | IllegalArgumentException e) {
             return Optional.empty();
         }
     }
@@ -82,13 +82,13 @@ public class KeyUtilities {
         return new File("store/circle-server.pub");
     }
 
-    public static Optional<Message> decryptMessage(byte[] body, PublicKey key) {
+    public static Optional<Message> decryptMessage(byte[] body, Key key) {
         return decryptContent(body, key).map(MessageUtilities::fromJson);
     }
 
-    public static Optional<String> decryptContent(byte[] body, PublicKey key) {
+    public static Optional<String> decryptContent(byte[] body, Key key) {
         try {
-            var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            var cipher = Cipher.getInstance(KEY_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, key);
             var decrypted = new String(cipher.doFinal(body));
             return Optional.ofNullable(decrypted);
@@ -106,11 +106,11 @@ public class KeyUtilities {
 
     public static byte[] encryptContent(String content, Key key) {
         try {
-            var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            var cipher = Cipher.getInstance(KEY_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
             return cipher.doFinal(content.getBytes());
         }
-        catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
+        catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | NullPointerException | InvalidKeyException e) {
             return new byte[0];
         }
     }
