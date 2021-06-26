@@ -3,9 +3,6 @@ package nl.guuslieben.circle.common.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -20,17 +17,18 @@ import java.util.Optional;
 
 public class MessageUtilities {
 
-    private static final Logger log = LoggerFactory.getLogger(MessageUtilities.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final String HASH_ALGORITHM = "SHA-512";
 
     private static final String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
 
-    public final static String PUBLIC_KEY = "public-key";
+    public static final String PUBLIC_KEY = "public-key";
     public static final String INVALID = "InvalidatedContent";
     public static final String REJECT = "Rejected#";
+
+    private MessageUtilities() {
+    }
 
     public static Message fromJson(String message) {
         try {
@@ -84,12 +82,12 @@ public class MessageUtilities {
     }
 
     public static String generateTimestamp() {
-        return DATE_FORMAT.format(new Date());
+        return new SimpleDateFormat(DATE_PATTERN).format(new Date());
     }
 
     public static LocalDateTime parseTimestamp(String timestamp) {
         try {
-            final var instant = DATE_FORMAT.parse(timestamp).toInstant();
+            final var instant = new SimpleDateFormat(DATE_PATTERN).parse(timestamp).toInstant();
             return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
         }
         catch (ParseException e) {
@@ -100,7 +98,7 @@ public class MessageUtilities {
     public static <T> String toJson(T content) {
         if (content instanceof String) return (String) content;
         try {
-            final String json = MAPPER.writeValueAsString(content);
+            final var json = MAPPER.writeValueAsString(content);
             // Jackson can map invalid JSON strings to string literal 'null', ensure we catch it here
             return json == null || "null".equals(json) ? INVALID : json;
         }
@@ -109,19 +107,19 @@ public class MessageUtilities {
         }
     }
 
-    public static Message reject(String reason, PrivateKey key) {
+    public static Message rejectMessage(String reason) {
         return new Message(REJECT + reason);
     }
 
     public static byte[] rejectEncrypted(String reason, PrivateKey key) {
-        final Message message = reject(reason, key);
+        final var message = rejectMessage(reason);
         return KeyUtilities.encryptMessage(message, key);
     }
 
     public static Optional<String> getRejection(Message message) {
-        final boolean rejected = message.getContent().startsWith(REJECT);
+        final var rejected = message.getContent().startsWith(REJECT);
         if (rejected) {
-            final String reason = message.getContent().replace(REJECT, "");
+            final var reason = message.getContent().replace(REJECT, "");
             return Optional.of(reason);
         }
         else {

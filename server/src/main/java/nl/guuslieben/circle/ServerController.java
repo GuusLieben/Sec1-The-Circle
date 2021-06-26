@@ -57,15 +57,15 @@ public class ServerController {
                     return new Message(model);
                 }
                 catch (CertificateEncodingException | SignatureException | InvalidKeyException e) {
-                    return MessageUtilities.reject("Could not create certificate", CircleServer.KEYS.getPrivate());
+                    return MessageUtilities.rejectMessage("Could not create certificate");
                 }
 
             } else {
-                return MessageUtilities.reject("Invalid invalid key", CircleServer.KEYS.getPrivate());
+                return MessageUtilities.rejectMessage("Invalid invalid key");
             }
 
         } else {
-            return MessageUtilities.reject("Invalid model", CircleServer.KEYS.getPrivate());
+            return MessageUtilities.rejectMessage("Invalid model");
         }
     }
 
@@ -107,12 +107,12 @@ public class ServerController {
 
     private String store(X509Certificate certificate, String email) {
         try {
-            File certs = new File("store/certs");
+            var certs = new File("store/certs");
             certs.mkdirs();
-            final File file = new File(certs, email + "-" + System.currentTimeMillis() + ".cert");
+            final var file = new File(certs, email + "-" + System.currentTimeMillis() + ".cert");
             file.createNewFile();
-            final String pem = CertificateUtilities.toPem(certificate);
-            FileWriter writer = new FileWriter(file);
+            final var pem = CertificateUtilities.toPem(certificate);
+            var writer = new FileWriter(file);
             writer.write(pem);
             writer.close();
             return file.getName();
