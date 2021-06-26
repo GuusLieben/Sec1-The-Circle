@@ -20,6 +20,7 @@ import java.util.Optional;
 import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.common.UserData;
 import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
+import nl.guuslieben.circle.common.rest.LoginRequest;
 
 class UtilitiesTests {
 
@@ -375,5 +376,38 @@ class UtilitiesTests {
         Assertions.assertNotNull(data);
         Assertions.assertEquals("bob@circle.com", data.getEmail());
         Assertions.assertEquals("Bob", data.getName());
+    }
+
+    @Test
+    void testDecodePrivateKey() throws NoSuchAlgorithmException {
+        final KeyPair pair = KeyUtilities.generateKeyPair(new UserData("Bob", "bob@circle.com"));
+        final PrivateKey privateKey = pair.getPrivate();
+        final String encoded = KeyUtilities.encodeKeyToBase64(privateKey);
+
+        final Optional<PrivateKey> key = KeyUtilities.decodeBase64ToPrivate(encoded);
+        Assertions.assertTrue(key.isPresent());
+        Assertions.assertEquals(privateKey, key.get());
+    }
+
+    @Test
+    void testStoreAndGetCertificate() throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        final Path tempFile = Files.createTempFile("circle", "tmp");
+        final UserData data = new UserData("Bob", "bob@circle.com");
+
+        final KeyPair pair = KeyUtilities.generateKeyPair(data);
+        final X509Certificate certificate = CertificateUtilities.createCertificate(pair);
+        Assertions.assertDoesNotThrow(() -> CertificateUtilities.store(certificate, data.getEmail()));
+
+        final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(data.getEmail());
+        Assertions.assertTrue(x509Certificate.isPresent());
+        Assertions.assertEquals(certificate, x509Certificate.get());
+    }
+
+    @Test
+    void testLoginRequestRejectsNull() {
+        Assertions.assertThrows(NullPointerException.class, () -> new LoginRequest(null, "pass"));
+        Assertions.assertThrows(NullPointerException.class, () -> new LoginRequest("user", null));
+        Assertions.assertThrows(NullPointerException.class, () -> new LoginRequest(null, null));
+        Assertions.assertDoesNotThrow(() -> new LoginRequest("user", "pass"));
     }
 }
