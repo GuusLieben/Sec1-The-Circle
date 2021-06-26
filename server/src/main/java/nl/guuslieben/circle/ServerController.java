@@ -77,7 +77,7 @@ public class ServerController {
         if (x509Certificate == null) return MessageUtilities.rejectEncrypted("Ensure CSR is run before registering a user", CircleServer.KEYS.getPrivate());
 
         return this.process(body, publicKey, User.class, user -> {
-            final String certFile = this.store(x509Certificate, user.getEmail());
+            final String certFile = CertificateUtilities.store(x509Certificate, user.getEmail());
 
             final PersistentUser persistentUser = PersistentUser.of(user, certFile);
             final Optional<PersistentUser> byId = this.userRepository.findById(user.getEmail());
@@ -118,23 +118,6 @@ public class ServerController {
         if (key.isEmpty()) return Optional.empty();
 
         return KeyUtilities.decryptMessage(body, key.get());
-    }
-
-    private String store(X509Certificate certificate, String email) {
-        try {
-            var certs = new File("store/certs");
-            certs.mkdirs();
-            final var file = new File(certs, email + "-" + System.currentTimeMillis() + ".cert");
-            file.createNewFile();
-            final var pem = CertificateUtilities.toPem(certificate);
-            var writer = new FileWriter(file);
-            writer.write(pem);
-            writer.close();
-            return file.getName();
-        }
-        catch (CertificateEncodingException | IOException e) {
-            return null;
-        }
     }
 
 }
