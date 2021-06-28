@@ -1,6 +1,7 @@
 package nl.guuslieben.circle;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,11 +13,17 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import nl.guuslieben.circle.common.Response;
+import nl.guuslieben.circle.common.Topic;
+import nl.guuslieben.circle.common.TopicCollection;
+import nl.guuslieben.circle.common.rest.CreateTopic;
 import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.common.UserData;
 import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
@@ -25,17 +32,25 @@ import nl.guuslieben.circle.common.util.CertificateUtilities;
 import nl.guuslieben.circle.common.util.KeyUtilities;
 import nl.guuslieben.circle.common.util.Message;
 import nl.guuslieben.circle.common.util.MessageUtilities;
-import nl.guuslieben.circle.users.PersistentUser;
-import nl.guuslieben.circle.users.UserRepository;
+import nl.guuslieben.circle.persistence.PersistentResponse;
+import nl.guuslieben.circle.persistence.PersistentTopic;
+import nl.guuslieben.circle.persistence.PersistentUser;
+import nl.guuslieben.circle.persistence.ResponseRepository;
+import nl.guuslieben.circle.persistence.TopicRepository;
+import nl.guuslieben.circle.persistence.UserRepository;
 
 @RestController
 public class ServerController {
 
     private final UserRepository userRepository;
+    private final TopicRepository topicRepository;
+    private final ResponseRepository responseRepository;
     private static final Map<String, X509Certificate> certificateCache = new HashMap<>();
 
-    public ServerController(UserRepository userRepository) {
+    public ServerController(UserRepository userRepository, TopicRepository topicRepository, ResponseRepository responseRepository) {
         this.userRepository = userRepository;
+        this.topicRepository = topicRepository;
+        this.responseRepository = responseRepository;
     }
 
     @PostMapping("csr")
@@ -103,6 +118,29 @@ public class ServerController {
         });
     }
 
+    @PostMapping("topic")
+    public byte[] createTopic(@RequestBody byte[] body, @RequestHeader(MessageUtilities.PUBLIC_KEY) String publicKey) {
+        return this.process(body, publicKey, CreateTopic.class, topic -> {
+            final String email = topic.getAuthor().getEmail();
+            final Optional<PersistentUser> user = this.userRepository.findById(email);
+            if (user.isEmpty()) return MessageUtilities.rejectMessage("User does not exist");
+
+            final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(email);
+            if (x509Certificate.isEmpty()) return MessageUtilities.rejectMessage("No certificate for user");
+
+            // We already know this can be decoded as we are in a callback
+            final Optional<PublicKey> pubKey = KeyUtilities.decodeBase64ToKey(publicKey);
+            final boolean verified = CertificateUtilities.verify(x509Certificate.get(), pubKey.get());
+
+            if (!verified) return MessageUtilities.rejectMessage("Keys do not match!");
+
+            final PersistentUser persistentUser = user.get();
+            final PersistentTopic persistentTopic = new PersistentTopic(persistentUser, topic.getName());
+            final PersistentTopic savedTopic = this.topicRepository.save(persistentTopic);
+
+            return new Message(new Topic(savedTopic.getId(), savedTopic.getName(), new UserData(persistentUser.getName(), persistentUser.getEmail()), new ArrayList<>()));
+        });
+    }
     @GetMapping
     public Message get() {
         return new Message(new UserData("Sample", "john@example.com"));
