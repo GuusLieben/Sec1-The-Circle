@@ -62,6 +62,7 @@ public class TopicsView extends LitTemplate {
 
     public void onCreate(ClickEvent<Button> event) {
         final ServerResponse<Topic> response = this.service.createTopic(this.name.getValue());
+        this.name.clear();
 
         if (response.accepted()) {
             final Topic topic = response.getObject();

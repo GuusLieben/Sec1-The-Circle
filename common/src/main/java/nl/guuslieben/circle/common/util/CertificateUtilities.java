@@ -94,7 +94,7 @@ public class CertificateUtilities {
         try {
             final var file = new File(CERTS, email + ".cert");
             if (!CERTS.exists() && !CERTS.mkdirs()) return null;
-            if (!file.exists() && file.createNewFile()) return null;
+            if (!file.exists() && !file.createNewFile()) return null;
             
             final var pem = CertificateUtilities.toPem(certificate);
             try (var stream = new FileOutputStream(file)) {
