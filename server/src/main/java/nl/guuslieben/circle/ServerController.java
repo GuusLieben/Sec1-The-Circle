@@ -175,7 +175,7 @@ public class ServerController {
                 final PersistentUser responseAuthor = response.getAuthor();
                 responses.add(new Response(persistentTopic.getId(), response.getContent(), new UserData(responseAuthor.getName(), responseAuthor.getEmail())));
             }
-            Collections.reverse(responses);
+            
             return new Topic(persistentTopic.getId(), persistentTopic.getName(), new UserData(author.getName(), author.getEmail()), responses);
         }
         return null;
