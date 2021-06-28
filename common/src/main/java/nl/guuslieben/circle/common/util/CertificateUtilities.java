@@ -6,14 +6,13 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
@@ -88,25 +87,20 @@ public class CertificateUtilities {
     }
 
     public static boolean verify(Certificate certificate, PublicKey key) {
-        try {
-            certificate.verify(key);
-            return true;
-        }
-        catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
-            return false;
-        }
+        return certificate.getPublicKey().equals(key);
     }
 
     public static String store(X509Certificate certificate, String email) {
         try {
             final var file = new File(CERTS, email + ".cert");
-            if (!(CERTS.mkdirs() && file.createNewFile()))
-                return null;
+            if (!CERTS.exists() && !CERTS.mkdirs()) return null;
+            if (!file.exists() && file.createNewFile()) return null;
             
             final var pem = CertificateUtilities.toPem(certificate);
-            try (var writer = new FileWriter(file)) {
-                writer.write(pem);
+            try (var stream = new FileOutputStream(file)) {
+                stream.write(pem.getBytes(StandardCharsets.UTF_8));
             }
+
             return file.getName();
         }
         catch (CertificateEncodingException | IOException e) {
