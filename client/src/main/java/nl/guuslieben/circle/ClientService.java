@@ -19,14 +19,19 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import lombok.Getter;
 import lombok.Setter;
+import nl.guuslieben.circle.common.Topic;
+import nl.guuslieben.circle.common.TopicCollection;
 import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.common.UserData;
 import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
+import nl.guuslieben.circle.common.rest.CreateTopic;
 import nl.guuslieben.circle.common.rest.LoginRequest;
 import nl.guuslieben.circle.common.util.CertificateUtilities;
 import nl.guuslieben.circle.common.util.KeyUtilities;
@@ -80,6 +85,13 @@ public class ClientService {
         }
     }
 
+    public <T> Optional<T> get(String url, Class<T> type) {
+        url = BASE_URL + url;
+        RestTemplate template = this.templateBuilder.build();
+        final ResponseEntity<T> response = template.getForEntity(url, type);
+        return Optional.of(response.getBody());
+    }
+
     public Optional<X509Certificate> csr(UserData data, String password) {
         final String publicKey = KeyUtilities.encodeKeyToBase64(this.getPair(data.getEmail()).getPublic());
 
@@ -118,6 +130,17 @@ public class ClientService {
         this.email = loginRequest.getUsername();
         final Optional<Message> response = this.send("login", loginRequest, true);
         return this.response(response, UserData.class, () -> null);
+    }
+
+    public ServerResponse<Topic> createTopic(String name) {
+        final CreateTopic topic = new CreateTopic(-1, name, new UserData(null, this.email));
+        final Optional<Message> response = this.send("topic", topic, true);
+        return this.response(response, Topic.class, () -> null);
+    }
+
+    public List<Topic> getTopics() {
+        final Optional<TopicCollection> topics = this.get("topics", TopicCollection.class);
+        return topics.map(TopicCollection::getTopics).orElseGet(ArrayList::new);
     }
 
     public String store(String key, String email) {

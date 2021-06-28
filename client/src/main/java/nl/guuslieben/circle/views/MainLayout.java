@@ -18,6 +18,7 @@ import com.vaadin.flow.router.RouterLink;
 
 import java.util.Optional;
 
+import nl.guuslieben.circle.views.main.TopicsView;
 import nl.guuslieben.circle.views.main.LoginView;
 import nl.guuslieben.circle.views.main.MainView;
 import nl.guuslieben.circle.views.main.RegisterView;
@@ -30,6 +31,7 @@ public class MainLayout extends AppLayout {
     private final Tabs menu;
     private H1 viewTitle;
     private Avatar avatar;
+    private boolean enabled;
 
     public MainLayout() {
         this.setPrimarySection(Section.DRAWER);
@@ -92,6 +94,7 @@ public class MainLayout extends AppLayout {
                 createTab("Home", MainView.class),
                 createTab("Login", LoginView.class),
                 createTab("Register", RegisterView.class),
+                createTab("Create Topic", TopicsView.class),
         };
     }
 
@@ -107,9 +110,11 @@ public class MainLayout extends AppLayout {
         super.afterNavigation();
         this.getTabForComponent(this.getContent()).ifPresent(this.menu::setSelectedTab);
         this.viewTitle.setText(this.getCurrentPageTitle());
-        if (this.getContent() instanceof LoginView) {
-            ((LoginView) this.getContent()).setAfterLogin(data -> this.setAvatarName(data.getName()));
-        }
+        if (this.getContent() instanceof LoginView) ((LoginView) this.getContent()).setAfterLogin(data -> {
+            this.setAvatarName(data.getName());
+            this.enabled = true;
+        });
+        if (this.getContent() instanceof TopicsView) ((TopicsView) this.getContent()).enableCreating(this.enabled);
     }
 
     private Optional<Tab> getTabForComponent(Component component) {

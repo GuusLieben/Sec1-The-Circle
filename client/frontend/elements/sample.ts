@@ -5,7 +5,15 @@ export class SampleElement extends LitElement {
 
     render() {
         return html`
-    <p id="name"></p>
+            <div class="box" style="
+                border: 1px solid #c9dbe6;
+                margin: 0 0 16px;
+                padding: 0 16px;
+                cursor: pointer;
+            ">
+                <h3 id="name"></h3>
+                <p id="author" style="font-style: italic"></p>
+            </div>
   `
     }
 
