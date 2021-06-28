@@ -221,7 +221,7 @@ public class ServerController {
     }
 
     private void log(String action, Object data, String actor) {
-        final PersistentEvent event = new PersistentEvent(MessageUtilities.generateTimestamp(), action, MessageUtilities.toJson(data), actor);
+        final PersistentEvent event = new PersistentEvent(MessageUtilities.generateTimestamp(), action, data == null ? null : MessageUtilities.toJson(data), actor);
         this.eventRepository.save(event);
     }
 
