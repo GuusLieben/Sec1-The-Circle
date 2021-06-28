@@ -14,6 +14,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,6 +151,7 @@ public class ServerController {
             final PersistentUser author = persistentTopic.getAuthor();
             topics.add(new Topic(persistentTopic.getId(), persistentTopic.getName(), new UserData(author.getName(), author.getEmail()), null));
         }
+        Collections.reverse(topics);
         return new TopicCollection(topics);
     }
 

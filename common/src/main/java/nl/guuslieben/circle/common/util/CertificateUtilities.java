@@ -113,7 +113,7 @@ public class CertificateUtilities {
         if (!file.exists()) return Optional.empty();
 
         try {
-            final List<String> lines = Files.readAllLines(file.toPath());
+            final List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
             final var content = String.join(LINE_SEPARATOR, lines);
 
             return fromPem(content);

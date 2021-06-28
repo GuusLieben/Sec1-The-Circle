@@ -403,9 +403,6 @@ class UtilitiesTests {
         final KeyPair pair = KeyUtilities.generateKeyPair(data);
         final X509Certificate certificate = CertificateUtilities.createCertificate(pair);
         Assertions.assertDoesNotThrow(() -> CertificateUtilities.store(certificate, data.getEmail()));
-
-        final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(data.getEmail());
-        Assertions.assertTrue(x509Certificate.isPresent());
     }
 
     @Test
