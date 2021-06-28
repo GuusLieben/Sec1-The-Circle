@@ -1,4 +1,4 @@
-package nl.guuslieben.circle.users;
+package nl.guuslieben.circle.persistence;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;

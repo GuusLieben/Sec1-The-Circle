@@ -47,6 +47,7 @@ public class KeyUtilities {
         try (var stream = new FileOutputStream(out)) {
             byte[] encoded = key.getEncoded();
             stream.write(encoded);
+            stream.flush();
         }
     }
 

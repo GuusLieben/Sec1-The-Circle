@@ -15,11 +15,17 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 
+import nl.guuslieben.circle.common.Response;
+import nl.guuslieben.circle.common.Topic;
+import nl.guuslieben.circle.common.TopicCollection;
 import nl.guuslieben.circle.common.User;
 import nl.guuslieben.circle.common.UserData;
 import nl.guuslieben.circle.common.rest.CertificateSigningRequest;
+import nl.guuslieben.circle.common.rest.CreateTopic;
 import nl.guuslieben.circle.common.rest.LoginRequest;
 
 class UtilitiesTests {
@@ -404,6 +410,7 @@ class UtilitiesTests {
         final X509Certificate certificate = CertificateUtilities.createCertificate(pair);
         Assertions.assertDoesNotThrow(() -> CertificateUtilities.store(certificate, data.getEmail()));
 
+        
         final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(data.getEmail());
         Assertions.assertTrue(x509Certificate.isPresent());
     }
@@ -417,6 +424,45 @@ class UtilitiesTests {
         final LoginRequest request = new LoginRequest("user", "pass");
         Assertions.assertEquals("user", request.getUsername());
         Assertions.assertEquals("pass", request.getPassword());
+    }
+
+    @Test
+    void testCreateTopicModel() {
+        final CreateTopic empty = new CreateTopic();
+        final CreateTopic topic = new CreateTopic(1, "Topic", new UserData("Bob", "bob@circle.com"));
+        Assertions.assertEquals(1, topic.getId());
+        Assertions.assertEquals("Topic", topic.getName());
+        Assertions.assertEquals("Bob", topic.getAuthor().getName());
+        Assertions.assertEquals("bob@circle.com", topic.getAuthor().getEmail());
+    }
+
+    @Test
+    void testResponseModel() {
+        final Response empty = new Response();
+        final Response response = new Response(1, "Content", new UserData("Bob", "bob@circle.com"));
+        Assertions.assertEquals(1, response.getTopicId());
+        Assertions.assertEquals("Content", response.getContent());
+        Assertions.assertEquals("Bob", response.getAuthor().getName());
+        Assertions.assertEquals("bob@circle.com", response.getAuthor().getEmail());
+    }
+
+    @Test
+    void testTopicModel() {
+        final Topic empty = new Topic();
+        final Topic topic = new Topic(1, "Topic", new UserData("Bob", "bob@circle.com"), new ArrayList<>());
+        Assertions.assertEquals(1, topic.getId());
+        Assertions.assertEquals("Topic", topic.getName());
+        Assertions.assertEquals("Bob", topic.getAuthor().getName());
+        Assertions.assertEquals("bob@circle.com", topic.getAuthor().getEmail());
+        Assertions.assertEquals(0, topic.getResponses().size());
+    }
+
+    @Test
+    void testTopicCollectionModel() {
+        final Topic topicA = new Topic(1, "Topic", new UserData("Bob", "bob@circle.com"), new ArrayList<>());
+        final Topic topicB = new Topic(1, "Topic", new UserData("Bob", "bob@circle.com"), new ArrayList<>());
+        final TopicCollection collection = new TopicCollection(Arrays.asList(topicA, topicB));
+        Assertions.assertEquals(2, collection.getTopics().size());
     }
 
     @Test
