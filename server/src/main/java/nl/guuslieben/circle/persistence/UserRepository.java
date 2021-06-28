@@ -1,4 +1,4 @@
-package nl.guuslieben.circle.users;
+package nl.guuslieben.circle.persistence;
 
 import org.springframework.data.repository.CrudRepository;
 
