@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
@@ -86,8 +88,18 @@ public class CertificateUtilities {
         }
     }
 
-    public static boolean verify(Certificate certificate, PublicKey key) {
+    public static boolean compare(Certificate certificate, PublicKey key) {
         return certificate.getPublicKey().equals(key);
+    }
+
+    public static boolean verify(Certificate certificate, PublicKey key) {
+        try {
+            certificate.verify(key);
+            return true;
+        }
+        catch (CertificateException | NoSuchAlgorithmException | SignatureException | InvalidKeyException | NoSuchProviderException e) {
+            return false;
+        }
     }
 
     public static String store(X509Certificate certificate, String email) {

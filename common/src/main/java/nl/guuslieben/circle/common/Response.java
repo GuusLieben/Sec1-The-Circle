@@ -1,5 +1,7 @@
 package nl.guuslieben.circle.common;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -14,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class Response {
 
     @JsonProperty
+    @JsonInclude(Include.NON_DEFAULT)
     private long topicId;
     @JsonProperty
     private String content;

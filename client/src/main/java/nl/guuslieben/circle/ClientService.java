@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 
 import lombok.Getter;
 import lombok.Setter;
+import nl.guuslieben.circle.common.Response;
 import nl.guuslieben.circle.common.Topic;
 import nl.guuslieben.circle.common.TopicCollection;
 import nl.guuslieben.circle.common.User;
@@ -136,6 +137,12 @@ public class ClientService {
         final CreateTopic topic = new CreateTopic(-1, name, new UserData(null, this.email));
         final Optional<Message> response = this.send("topic", topic, true);
         return this.response(response, Topic.class, () -> null);
+    }
+
+    public ServerResponse<Response> createResponse(String content, long topic) {
+        final Response topicResponse = new Response(topic, content, new UserData(null, this.email));
+        final Optional<Message> response = this.send("topic/" + topic, topicResponse, true);
+        return this.response(response, Response.class, () -> null);
     }
 
     public List<Topic> getTopics() {

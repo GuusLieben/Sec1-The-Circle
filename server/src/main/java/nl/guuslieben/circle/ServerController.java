@@ -124,16 +124,9 @@ public class ServerController {
         return this.process(body, publicKey, CreateTopic.class, topic -> {
             final String email = topic.getAuthor().getEmail();
             final Optional<PersistentUser> user = this.userRepository.findById(email);
-            if (user.isEmpty()) return MessageUtilities.rejectMessage("User does not exist");
 
-            final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(email);
-            if (x509Certificate.isEmpty()) return MessageUtilities.rejectMessage("No certificate for user");
-
-            // We already know this can be decoded as we are in a callback
-            final Optional<PublicKey> pubKey = KeyUtilities.decodeBase64ToKey(publicKey);
-            final boolean verified = CertificateUtilities.verify(x509Certificate.get(), pubKey.get());
-
-            if (!verified) return MessageUtilities.rejectMessage("Keys do not match!");
+            final Optional<Message> message = this.verifyUser(user, publicKey);
+            if (message.isPresent()) return message.get();
 
             final PersistentUser persistentUser = user.get();
             final PersistentTopic persistentTopic = new PersistentTopic(persistentUser, topic.getName());
@@ -141,6 +134,21 @@ public class ServerController {
 
             return new Message(new Topic(savedTopic.getId(), savedTopic.getName(), new UserData(persistentUser.getName(), persistentUser.getEmail()), new ArrayList<>()));
         });
+    }
+
+    private Optional<Message> verifyUser(Optional<PersistentUser> user, String publicKey) {
+        if (user.isEmpty()) return Optional.of(MessageUtilities.rejectMessage("User does not exist"));
+
+        final Optional<X509Certificate> x509Certificate = CertificateUtilities.get(user.get().getEmail());
+        if (x509Certificate.isEmpty()) return Optional.of(MessageUtilities.rejectMessage("No certificate for user"));
+
+        // We already know this can be decoded as we are in a callback
+        final Optional<PublicKey> pubKey = KeyUtilities.decodeBase64ToKey(publicKey);
+        final boolean verified = CertificateUtilities.compare(x509Certificate.get(), pubKey.get());
+
+        if (!verified) return Optional.of(MessageUtilities.rejectMessage("Keys do not match!"));
+
+        return Optional.empty();
     }
 
     @GetMapping("topics")
@@ -167,9 +175,29 @@ public class ServerController {
                 final PersistentUser responseAuthor = response.getAuthor();
                 responses.add(new Response(persistentTopic.getId(), response.getContent(), new UserData(responseAuthor.getName(), responseAuthor.getEmail())));
             }
+            Collections.reverse(responses);
             return new Topic(persistentTopic.getId(), persistentTopic.getName(), new UserData(author.getName(), author.getEmail()), responses);
         }
         return null;
+    }
+
+    @PostMapping("topic/{id}")
+    public byte[] respond(@PathVariable("id") long id, @RequestBody byte[] body, @RequestHeader(MessageUtilities.PUBLIC_KEY) String publicKey) {
+        return this.process(body, publicKey, Response.class, response -> {
+            final Optional<PersistentTopic> topicOptional = this.topicRepository.findById(id);
+            if (topicOptional.isEmpty()) return MessageUtilities.rejectMessage("Topic with id '" + id + "' does not exist");
+            final PersistentTopic persistentTopic = topicOptional.get();
+
+            final Optional<PersistentUser> user = this.userRepository.findById(response.getAuthor().getEmail());
+
+            final Optional<Message> message = this.verifyUser(user, publicKey);
+            if (message.isPresent()) return message.get();
+
+            final PersistentUser persistentUser = user.get();
+            final PersistentResponse persistentResponse = new PersistentResponse(persistentUser, persistentTopic, response.getContent());
+            final PersistentResponse saved = this.responseRepository.save(persistentResponse);
+            return new Message(new Response(saved.getTopic().getId(), saved.getContent(), new UserData(persistentUser.getName(), persistentUser.getEmail())));
+        });
     }
 
     @GetMapping

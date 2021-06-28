@@ -76,12 +76,6 @@ public class RegisterView extends LitTemplate {
                 Notification.show("Server is not secure");
                 return;
             }
-
-            boolean valid = x509Certificate.get().getPublicKey().equals(publicKey);
-            if (!valid) {
-                Notification.show("Server is not secure");
-                return;
-            }
         } else {
             Notification.show("Could not collect certificate from server");
             return;

@@ -10,10 +10,6 @@ export class TopicsView extends LitElement {
     }
 
     render() {
-        return html`
-      <vaadin-text-field id="name" label="Name"></vaadin-text-field><br>
-      <vaadin-button id="create">New topic: </vaadin-button>
-      <div id="topics"></div>
-    `;
+        return html`<div id="content"></div>`;
     }
 }
