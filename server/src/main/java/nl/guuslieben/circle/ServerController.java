@@ -141,6 +141,35 @@ public class ServerController {
             return new Message(new Topic(savedTopic.getId(), savedTopic.getName(), new UserData(persistentUser.getName(), persistentUser.getEmail()), new ArrayList<>()));
         });
     }
+
+    @GetMapping("topics")
+    public TopicCollection topics() {
+        final Iterable<PersistentTopic> persistentTopics = this.topicRepository.findAll();
+        final List<Topic> topics = new ArrayList<>();
+        for (PersistentTopic persistentTopic : persistentTopics) {
+            final PersistentUser author = persistentTopic.getAuthor();
+            topics.add(new Topic(persistentTopic.getId(), persistentTopic.getName(), new UserData(author.getName(), author.getEmail()), null));
+        }
+        return new TopicCollection(topics);
+    }
+
+    @GetMapping("topic/{id}")
+    public Topic topic(@PathVariable("id") long id) {
+        final Optional<PersistentTopic> topicOptional = this.topicRepository.findById(id);
+        if (topicOptional.isPresent()) {
+            final PersistentTopic persistentTopic = topicOptional.get();
+            final PersistentUser author = persistentTopic.getAuthor();
+            final List<Response> responses = new ArrayList<>();
+
+            for (PersistentResponse response : persistentTopic.getResponses()) {
+                final PersistentUser responseAuthor = response.getAuthor();
+                responses.add(new Response(persistentTopic.getId(), response.getContent(), new UserData(responseAuthor.getName(), responseAuthor.getEmail())));
+            }
+            return new Topic(persistentTopic.getId(), persistentTopic.getName(), new UserData(author.getName(), author.getEmail()), responses);
+        }
+        return null;
+    }
+
     @GetMapping
     public Message get() {
         return new Message(new UserData("Sample", "john@example.com"));
