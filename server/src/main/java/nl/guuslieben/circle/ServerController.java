@@ -33,6 +33,8 @@ import nl.guuslieben.circle.common.util.CertificateUtilities;
 import nl.guuslieben.circle.common.util.KeyUtilities;
 import nl.guuslieben.circle.common.util.Message;
 import nl.guuslieben.circle.common.util.MessageUtilities;
+import nl.guuslieben.circle.persistence.EventRepository;
+import nl.guuslieben.circle.persistence.PersistentEvent;
 import nl.guuslieben.circle.persistence.PersistentResponse;
 import nl.guuslieben.circle.persistence.PersistentTopic;
 import nl.guuslieben.circle.persistence.PersistentUser;
@@ -46,12 +48,14 @@ public class ServerController {
     private final UserRepository userRepository;
     private final TopicRepository topicRepository;
     private final ResponseRepository responseRepository;
+    private final EventRepository eventRepository;
     private static final Map<String, X509Certificate> certificateCache = new HashMap<>();
 
-    public ServerController(UserRepository userRepository, TopicRepository topicRepository, ResponseRepository responseRepository) {
+    public ServerController(UserRepository userRepository, TopicRepository topicRepository, ResponseRepository responseRepository, EventRepository eventRepository) {
         this.userRepository = userRepository;
         this.topicRepository = topicRepository;
         this.responseRepository = responseRepository;
+        this.eventRepository = eventRepository;
     }
 
     @PostMapping("csr")
@@ -96,6 +100,8 @@ public class ServerController {
             final Optional<PersistentUser> byId = this.userRepository.findById(user.getEmail());
             if (byId.isPresent()) return MessageUtilities.rejectMessage("User already exists");
 
+            this.log("UserRegistered", null, persistentUser.getEmail());
+
             this.userRepository.save(persistentUser);
 
             return new Message(true);
@@ -114,6 +120,8 @@ public class ServerController {
 
             if (!passwordValid) return MessageUtilities.rejectMessage("Incorrect password");
 
+            this.log("UserLoggedIn", null, persistentUser.getEmail());
+
             final UserData userData = new UserData(persistentUser.getName(), persistentUser.getEmail());
             return new Message(userData);
         });
@@ -131,6 +139,8 @@ public class ServerController {
             final PersistentUser persistentUser = user.get();
             final PersistentTopic persistentTopic = new PersistentTopic(persistentUser, topic.getName());
             final PersistentTopic savedTopic = this.topicRepository.save(persistentTopic);
+
+            this.log("TopicCreated", topic, persistentUser.getEmail());
 
             return new Message(new Topic(savedTopic.getId(), savedTopic.getName(), new UserData(persistentUser.getName(), persistentUser.getEmail()), new ArrayList<>()));
         });
@@ -175,7 +185,7 @@ public class ServerController {
                 final PersistentUser responseAuthor = response.getAuthor();
                 responses.add(new Response(persistentTopic.getId(), response.getContent(), new UserData(responseAuthor.getName(), responseAuthor.getEmail())));
             }
-            
+
             return new Topic(persistentTopic.getId(), persistentTopic.getName(), new UserData(author.getName(), author.getEmail()), responses);
         }
         return null;
@@ -195,14 +205,24 @@ public class ServerController {
 
             final PersistentUser persistentUser = user.get();
             final PersistentResponse persistentResponse = new PersistentResponse(persistentUser, persistentTopic, response.getContent());
+
+            this.log("ReponseCreated", response, persistentUser.getEmail());
+
             final PersistentResponse saved = this.responseRepository.save(persistentResponse);
             return new Message(new Response(saved.getTopic().getId(), saved.getContent(), new UserData(persistentUser.getName(), persistentUser.getEmail())));
         });
     }
 
     @GetMapping
-    public Message get() {
-        return new Message(new UserData("Sample", "john@example.com"));
+    public List<PersistentEvent> get() {
+        List<PersistentEvent> events = new ArrayList<>();
+        for (PersistentEvent event : this.eventRepository.findAll()) events.add(event);
+        return events;
+    }
+
+    private void log(String action, Object data, String actor) {
+        final PersistentEvent event = new PersistentEvent(MessageUtilities.generateTimestamp(), action, data == null ? null : MessageUtilities.toJson(data), actor);
+        this.eventRepository.save(event);
     }
 
     private <T> byte[] process(byte[] body, String publicKey, Class<T> type, Function<T, Message> function) {
